@@ -1,0 +1,104 @@
+---
+title: "Sources and Pipelines"
+description: "Reusable streaming sources and the pipelines that consume them."
+---
+
+# Sources and pipelines
+
+Sources are project-wide identities under `sources/*.yml`. Pipelines reference those identities
+from `pipelines/<name>/pipeline.yml`.
+
+```text
+streambuild_project.toml
+sources/
+  order_events.yml
+pipelines/
+  order_events/
+    pipeline.yml
+    orders.sql
+    order_items.sql
+```
+
+Only direct `sources/*.yml` files are discovered. Source names must be unique across the project.
+
+## Managed Kafka source
+
+```yaml
+sources:
+  - name: order_events
+    kind: kafka
+    broker_list: redpanda:9092
+    topic: source.order_events.live
+    consumer_group: optional_group
+    format: JSONAsString
+    settings:
+      kafka_num_consumers: "1"
+    replay_boundary:
+      mode: offsets
+```
+
+StreamBuild creates:
+
+```text
+kafka__order_events   Kafka engine table
+raw__order_events     MergeTree landing table
+mv__order_events      landing materialized view
+```
+
+Managed sources support `offsets`, `timestamp`, and `landed_at`. `JSONAsString` is currently the
+only supported Kafka format. StreamBuild owns these source objects and blocks incompatible source
+drift rather than silently recreating them.
+
+## Adopted stream table
+
+Adopt an existing table without transferring ownership:
+
+```yaml
+sources:
+  - name: orders
+    kind: stream_table
+    table_name: orders_existing
+    replay_boundary:
+      mode: offsets
+      columns:
+        _replay_partition: kafka_partition
+        _replay_offset: kafka_offset
+        _replay_timestamp: kafka_timestamp
+```
+
+The table must already exist as a bare relation name in the selected target database. StreamBuild
+validates its replay columns but never creates, drops, or replaces the adopted table.
+
+| Mode | Required mappings |
+|---|---|
+| `offsets` | `_replay_partition`, `_replay_offset`, `_replay_timestamp` |
+| `timestamp` | `_replay_timestamp` |
+| `cursor` | `_replay_cursor`, `_replay_timestamp` |
+
+Integer roles must use ClickHouse integer types. Timestamp roles must use `DateTime` or
+`DateTime64`. Adopted sources do not support `landed_at`.
+
+## Pipeline declaration
+
+`pipelines/order_events/pipeline.yml` contains the source identity:
+
+```yaml
+source: order_events
+```
+
+The directory name is the pipeline name. Model files are discovered recursively, and each model
+name is its SQL filename stem. Every pipeline needs at least one model. Nested `pipeline.yml` files,
+duplicate model stems, and project-wide duplicate model names are rejected.
+
+Virtual-environment replay policies may also be set at pipeline level:
+
+```yaml
+source: order_events
+replay_on_change:
+  breaking: full
+  non_breaking: bounded-7d
+bounded_replay_fallback: full
+```
+
+These policy fields are invalid in direct mode because direct builds always rebuild their selected
+closure.

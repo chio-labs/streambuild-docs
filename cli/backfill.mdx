@@ -1,0 +1,33 @@
+---
+title: "stb backfill"
+description: "Create and populate a virtual-environment deployment."
+---
+
+# `stb backfill`
+
+`backfill` requires `[settings] virtual_environments = true`.
+
+```bash
+stb backfill
+stb backfill --deployment-id release_2026_07
+stb backfill --select orders --full-refresh
+stb backfill --select orders --start-time 2026-07-01T00:00:00Z
+stb backfill --auto-approve
+```
+
+The command plans, creates deployment-specific tables and materialized views, attaches live paths,
+captures inclusive watermarks, and replays history. Stable `tbl__*` views remain unchanged until
+publish.
+
+`--full-refresh` and `--start-time` are mutually exclusive, require at least one selector, and apply
+to selected models plus downstream closure. Start-time replay also requires active published roots.
+
+Before writing, StreamBuild displays the plan and prompts for confirmation. `--auto-approve` skips
+the prompt; `--json` execution requires auto approval.
+
+After backfill, assess and publish the same deployment:
+
+```bash
+stb audit backfill --deployment-id <id>
+stb publish --deployment-id <id>
+```

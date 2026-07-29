@@ -1,0 +1,42 @@
+---
+title: "stb build"
+description: "Rebuild models directly and replay retained history."
+---
+
+# `stb build`
+
+`build` is the direct-mode write command.
+
+```bash
+stb build
+stb build --select orders
+stb build --auto-approve
+stb build --auto-approve --json
+```
+
+It preserves managed source objects, drops and recreates the selected model closure at ordinary
+`tbl__*` and `mv__*` names, and replays retained history through the rebuilt graph.
+
+Before writing, StreamBuild displays the destructive plan and asks:
+
+```text
+Proceed with build? [y/N]
+```
+
+Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution requires
+`--auto-approve`.
+
+| Option | Purpose |
+|---|---|
+| `--select VALUE` | Bare model or `pipeline:<name>`; repeatable |
+| `--auto-approve` | Skip confirmation |
+| `--json` | Structured result; requires auto approval |
+| `--verbose` | Show complete schema diffs |
+
+The selected model or pipeline includes all downstream models. A full build runs every audit; a
+selected build runs audits whose complete model reference set is in execution scope.
+
+<Warning>
+  Builds do not roll back. A command failure may leave an incomplete direct graph; correct the cause
+  and rerun `stb build`.
+</Warning>

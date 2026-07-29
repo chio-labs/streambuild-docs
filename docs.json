@@ -1,0 +1,78 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "StreamBuild",
+  "description": "Declarative streaming data pipelines for ClickHouse.",
+  "colors": {
+    "primary": "#087E8B",
+    "light": "#0EA5A8",
+    "dark": "#075D67"
+  },
+  "logo": {
+    "light": "/streambuild_logo_light_cropped.png",
+    "dark": "/streambuild_logo_dark_cropped.png"
+  },
+  "favicon": "/streambuild_favicon.png",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "index",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+          "concepts/project-configuration",
+          "concepts/pipelines",
+          "concepts/models",
+          "concepts/direct-mode",
+          "concepts/deployments",
+          "concepts/replay-lineage",
+          "concepts/architecture",
+          "concepts/testing",
+          "concepts/macros",
+          "concepts/audits"
+        ]
+      },
+      {
+        "group": "CLI Reference",
+        "pages": [
+          "cli/discover",
+          "cli/compile",
+          "cli/plan",
+          "cli/build",
+          "cli/backfill",
+          "cli/audit",
+          "cli/publish",
+          "cli/test",
+          "cli/doctor",
+          "cli/repair",
+          "cli/reconcile",
+          "cli/janitor"
+        ]
+      },
+      {
+        "group": "Examples",
+        "pages": [
+          "examples/orders-demo"
+        ]
+      }
+    ]
+  },
+  "topbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/chio-labs/streambuild"
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/chio-labs/streambuild"
+    }
+  }
+}

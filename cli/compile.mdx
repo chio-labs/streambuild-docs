@@ -1,0 +1,42 @@
+---
+title: "stb compile"
+description: "Compile the project into canonical SQL, DDL, graph, and workflow artifacts."
+---
+
+# `stb compile`
+
+Compile every project resource without connecting to ClickHouse.
+
+```bash
+stb compile
+stb compile --project-dir /path/to/project
+stb compile --target-dir /tmp/streambuild-target
+```
+
+The default output root is project-level `target/`:
+
+```text
+target/
+  manifest.json
+  streambuild_dag.json
+  compiled/
+    models/<pipeline>/<model>.sql
+    resources/sources/...
+    resources/models/...
+    workflows/<pipeline>/...
+    audits/...
+    tests/...
+```
+
+StreamBuild builds the static target in staging and atomically replaces `compiled/`,
+`manifest.json`, and `streambuild_dag.json`. Runtime artifacts under `target/run/` are preserved.
+Sensitive Kafka broker userinfo and source settings are redacted.
+
+| Option | Purpose |
+|---|---|
+| `--project-dir PATH` | Project root |
+| `--target-dir PATH` | Replace the project `target/` root |
+| `--target NAME` | Select a project target |
+| `--vars JSON` | Variable overrides as one JSON object |
+
+`compile` works in both modes and remains connection-free.

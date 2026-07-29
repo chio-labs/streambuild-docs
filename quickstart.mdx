@@ -1,0 +1,160 @@
+---
+title: "Quickstart"
+description: "Build a direct-mode pipeline from an adopted ClickHouse stream table."
+---
+
+# Direct-mode quickstart
+
+This guide creates one local ClickHouse table, adopts it as a replay source, and builds a live
+materialized-view target with `stb build`.
+
+## Prerequisites
+
+- Python 3.12 or newer
+- [Docker](https://docs.docker.com/get-docker/)
+- Git and `uv`
+
+## 1. Install StreamBuild
+
+```bash
+git clone https://github.com/chio-labs/streambuild.git
+cd streambuild
+uv tool install .
+stb --help
+```
+
+## 2. Start ClickHouse
+
+```bash
+docker run --detach --name streambuild-clickhouse \
+  --publish 18123:8123 --publish 19000:9000 \
+  clickhouse/clickhouse-server:24.8
+```
+
+Create an input table with offset and timestamp columns. ClickHouse HTTP accepts one statement per
+request:
+
+```bash
+curl 'http://localhost:18123/' \
+  --data-binary 'CREATE DATABASE IF NOT EXISTS quickstart'
+
+curl 'http://localhost:18123/' --data-binary '
+CREATE TABLE IF NOT EXISTS quickstart.orders_input (
+  event_partition Int32,
+  event_offset Int64,
+  event_time DateTime64(3),
+  order_id String,
+  amount_cents UInt64
+) ENGINE = MergeTree ORDER BY (event_partition, event_offset)
+'
+
+curl 'http://localhost:18123/' --data-binary "
+INSERT INTO quickstart.orders_input VALUES
+  (0, 1, now64(3), 'order-1', 2500),
+  (0, 2, now64(3), 'order-2', 4100)
+"
+```
+
+## 3. Create the project
+
+```text
+quickstart/
+  streambuild_project.toml
+  sources/
+    orders.yml
+  pipelines/
+    orders/
+      pipeline.yml
+      order_totals.sql
+```
+
+`quickstart/streambuild_project.toml`:
+
+```toml
+name = "quickstart"
+default_target = "local"
+
+[connection]
+host = "localhost"
+port = 18123
+username = "default"
+
+[targets.local]
+database = "quickstart"
+```
+
+Direct mode is the default, so this file intentionally omits `[settings]`.
+
+`quickstart/sources/orders.yml`:
+
+```yaml
+sources:
+  - name: orders
+    kind: stream_table
+    table_name: orders_input
+    replay_boundary:
+      mode: offsets
+      columns:
+        _replay_partition: event_partition
+        _replay_offset: event_offset
+        _replay_timestamp: event_time
+```
+
+`quickstart/pipelines/orders/pipeline.yml`:
+
+```yaml
+source: orders
+```
+
+`quickstart/pipelines/orders/order_totals.sql`:
+
+```sql
+MODEL (
+  engine: "MergeTree()",
+  order_by: ["order_id", "_replay_partition", "_replay_offset"],
+);
+
+SELECT
+  CAST(order_id AS String) AS order_id,
+  CAST(amount_cents AS UInt64) AS amount_cents,
+  CAST(_replay_partition AS Int32) AS _replay_partition,
+  CAST(_replay_offset AS Int64) AS _replay_offset,
+  CAST(_replay_timestamp AS DateTime64(3)) AS _replay_timestamp
+FROM __source("orders")
+```
+
+## 4. Discover and compile
+
+```bash
+stb discover --project-dir quickstart
+stb compile --project-dir quickstart
+```
+
+Compilation is offline. Review `quickstart/target/manifest.json`, `streambuild_dag.json`, and the
+generated SQL under `target/compiled/`.
+
+## 5. Plan and build
+
+```bash
+stb plan --project-dir quickstart
+stb build --project-dir quickstart
+```
+
+Review the destructive plan and approve it with `y`. The build preserves `orders_input`, creates
+`tbl__order_totals` and `mv__order_totals`, then replays retained rows through the model.
+
+```bash
+curl 'http://localhost:18123/?query=SELECT%20*%20FROM%20quickstart.tbl__order_totals%20ORDER%20BY%20order_id'
+```
+
+<Note>
+  Replay uses an inclusive cutoff and is intentionally at least once around that boundary. Choose
+  model SQL and ClickHouse engines that tolerate duplicate delivery where required.
+</Note>
+
+## Next steps
+
+- [Project configuration](/concepts/project-configuration)
+- [Models and references](/concepts/models)
+- [Direct-mode behavior](/concepts/direct-mode)
+- [Virtual-environment orders demo](/examples/orders-demo)

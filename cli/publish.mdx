@@ -1,0 +1,31 @@
+---
+title: "stb publish"
+description: "Replace stable view bindings with one staged deployment."
+---
+
+# `stb publish`
+
+Publish a completed virtual-environment deployment:
+
+```bash
+stb publish --deployment-id <id>
+stb publish --deployment-id <id> --json
+```
+
+For each managed relation, StreamBuild atomically replaces the stable `tbl__*` view so it points to
+the selected deployment table. The full graph is not switched in one transaction; bindings are
+replaced one relation at a time.
+
+If `--deployment-id` is omitted, exactly one candidate must exist. Zero candidates or multiple
+candidates return an error with follow-up guidance.
+
+<Warning>
+  `publish` does not run audits and does not enforce a prior `audit backfill` result. Assess the
+  deployment explicitly before publishing it.
+</Warning>
+
+After publish, new reads resolve through stable views to the selected physical tables. Older
+deployment objects remain available for diagnosis, repair, and retention cleanup.
+
+`publish` requires virtual environments. It does not load or compile the pipeline graph, but it uses
+project connection and target configuration when available.
