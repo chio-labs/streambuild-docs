@@ -1,0 +1,137 @@
+---
+title: "Project Configuration"
+description: "TOML targets, local overrides, variables, connections, and mode selection."
+---
+
+# Project configuration
+
+Every project has a committed `streambuild_project.toml`. Legacy YAML project files are rejected.
+
+```toml
+name = "analytics"
+default_target = "dev"
+adapter = "clickhouse"
+
+[settings]
+virtual_environments = false
+
+[connection]
+host = "localhost"
+port = 8123
+username = "default"
+password = "${ENV:CLICKHOUSE_PASSWORD}"
+
+[vars]
+environment_name = "dev"
+
+[targets.dev]
+database = "analytics_dev"
+
+[targets.dev.connection]
+host = "dev-clickhouse"
+
+[targets.dev.vars]
+environment_name = "target-dev"
+```
+
+`name` and `default_target` are required. `adapter` defaults to `clickhouse`.
+
+## Direct mode and virtual environments
+
+Direct mode is selected when `virtual_environments` is omitted or false:
+
+```toml
+[settings]
+virtual_environments = false
+```
+
+Enable the staged lifecycle for the entire invocation with:
+
+```toml
+[settings]
+virtual_environments = true
+```
+
+The setting is project- or local-level only. It is not accepted on individual targets, pipelines,
+or models.
+
+## Local overrides
+
+Use ignored `streambuild_local.toml` for developer-specific values:
+
+```toml
+target = "personal"
+
+[settings]
+virtual_environments = true
+
+[connection]
+host = "localhost"
+port = 18123
+
+[targets.personal]
+database = "analytics_klonge"
+```
+
+Local configuration cannot replace the project name or authored resources.
+
+## Precedence
+
+### Target
+
+1. CLI `--target`
+2. local `target`
+3. project `default_target`
+
+### Variables, lowest to highest
+
+1. project `[vars]`
+2. selected project target vars
+3. selected local target vars
+4. local `[vars]`
+5. CLI `--vars`
+
+```bash
+stb plan --vars '{"environment_name":"ci"}'
+```
+
+### Database
+
+1. CLI `--database`
+2. selected local target database
+3. selected project target database
+
+### Connection, lowest to highest
+
+1. project connection
+2. selected project target connection
+3. selected local target connection
+4. local connection
+5. `STREAMBUILD_CLICKHOUSE_HOST`, `STREAMBUILD_CLICKHOUSE_PORT`,
+   `STREAMBUILD_CLICKHOUSE_USERNAME`, and `STREAMBUILD_CLICKHOUSE_PASSWORD`
+6. CLI connection flags
+
+There is no public metadata-database override. Metadata lives in the selected target database.
+
+## Interpolation
+
+Use project variables and environment variables in values:
+
+```toml
+[vars]
+database_suffix = "dev"
+credentials = {username = "reader", role = "analytics"}
+
+[targets.dev]
+database = "analytics_${database_suffix}"
+
+[connection]
+password = "${ENV:CLICKHOUSE_PASSWORD}"
+```
+
+Interpolation is recursive through arrays and mappings. A whole token preserves scalar or
+structured value types. Objects and arrays cannot be embedded inside surrounding text; consume
+structured variables through a Python macro instead.
+
+Connection secrets are expanded only when a command actually connects. `stb discover` and
+`stb compile` remain connection-free.

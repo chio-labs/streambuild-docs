@@ -1,0 +1,49 @@
+---
+title: "stb plan"
+description: "Preview direct rebuilds or virtual-environment deployments without writing."
+---
+
+# `stb plan`
+
+Compare the compiled project with ClickHouse and print a read-only plan.
+
+```bash
+stb plan
+stb plan --select orders
+stb plan --select pipeline:order_events --json
+stb plan --verbose
+```
+
+The effective project mode chooses the planner:
+
+- **Direct mode:** plan the requested destructive rebuild. No selector means every model; selectors
+  include downstream closure. Matching objects are not pruned.
+- **Virtual environments:** plan changed deployment objects, replay roots, and policies against
+  published and staged state.
+
+## Selection
+
+Repeat `--select` to union bare model names and `pipeline:<name>` selectors:
+
+```bash
+stb plan --select orders --select region_lookup
+```
+
+Graph `+` syntax, tags, paths, globs, and exclusions are not supported by `plan`.
+
+## Replay controls
+
+The following apply only to virtual environments:
+
+```bash
+stb plan --select orders --full-refresh
+stb plan --select orders --start-time 2026-07-01T00:00:00Z
+```
+
+Both require `--select` and are mutually exclusive.
+
+## Common options
+
+Connecting commands accept `--host`, `--port`, `--username`, `--password`, `--database`,
+`--target`, `--vars`, and `--project-dir`. `--json` emits structured output and `--verbose` includes
+full schema diffs.

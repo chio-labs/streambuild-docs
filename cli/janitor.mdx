@@ -1,0 +1,34 @@
+---
+title: "stb janitor"
+description: "Preview and remove stale deployment objects after a retention window."
+---
+
+# `stb janitor`
+
+Preview deployment cleanup:
+
+```bash
+stb janitor
+stb janitor --retention-days 30
+stb janitor --json
+```
+
+The default retention window is seven days. Preview output separates deletable and kept deployments
+and explains each decision.
+
+Apply the same eligibility rules and drop deletable physical objects:
+
+```bash
+stb janitor --retention-days 30 --apply
+```
+
+Janitor preserves currently active relations, deployments published inside the retention window,
+and deployments whose physical mappings do not safely match their recorded identity. Immediately
+before cleanup, it refreshes active state and refuses to remove any relation that became active.
+
+<Warning>
+  `--apply` does not ask for confirmation. Always inspect a dry run first.
+</Warning>
+
+Janitor removes deployment-specific physical objects, not stable logical views. It requires virtual
+environments and does not load the pipeline graph.

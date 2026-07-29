@@ -1,0 +1,99 @@
+---
+title: "Direct Mode"
+description: "The default rebuild workflow without staged views or a publish step."
+---
+
+# Direct mode
+
+Direct mode is StreamBuild's default operational model. It rebuilds selected model tables and
+materialized views at their ordinary names, then replays retained source history into them.
+
+```toml
+# streambuild_project.toml
+name = "analytics"
+default_target = "prod"
+
+[targets.prod]
+database = "analytics"
+```
+
+No mode setting is required. An explicit value is equivalent:
+
+```toml
+[settings]
+virtual_environments = false
+```
+
+<Note>
+  Current CLI help and plan JSON use the internal value `standard`. It refers to direct mode and
+  will be renamed in a separate product change.
+</Note>
+
+## Plan behavior
+
+```bash
+stb plan
+stb plan --select orders
+stb plan --select pipeline:order_events
+```
+
+Direct plans are intentionally conservative:
+
+- no selector rebuilds every model
+- a selector includes the selected model or pipeline and all downstream models
+- upstream prerequisites outside the execution closure are preserved
+- matching warehouse state does not prune a requested rebuild
+- plans show destructive drop and create actions but make no modifications
+
+`--full-refresh` and `--start-time` are virtual-environment controls and are rejected in direct
+mode.
+
+## Build behavior
+
+```bash
+stb build
+stb build --select orders
+stb build --auto-approve
+```
+
+One build:
+
+1. validates adopted sources and preserves managed Kafka landing resources
+2. rejects incompatible managed-source drift
+3. verifies retained history can satisfy the rebuild
+4. drops selected materialized views and model tables in reverse dependency order
+5. recreates model tables and views in dependency order
+6. captures inclusive replay watermarks and replays retained history
+7. runs applicable SQL audits against the rebuilt direct tables
+
+Direct model names are unsuffixed:
+
+```text
+tbl__orders
+mv__orders
+```
+
+There are no deployment-specific model branches, stable logical views, or publish command.
+
+## Delivery guarantee
+
+Replay is at least once around the inclusive cutoff. Rows arriving near boundary capture may be
+delivered by both the live materialized view and replay. Duplicate delivery is preferred over a
+missing interval.
+
+Use deduplicating engines, stable keys, or aggregate-idempotent model design when duplicate
+contribution would be incorrect.
+
+## Failure and rerun
+
+Direct builds are destructive and do not roll back. If a build fails after teardown, rerun
+`stb build` after correcting the cause. StreamBuild persists required replay coverage and refuses
+to silently use a shorter history window when source retention no longer covers it.
+
+An error-severity audit makes the command fail after the new resources are live; it does not revert
+the rebuild.
+
+## Mode ownership
+
+Automatic conversion between direct and virtual-environment layouts is not supported. Use separate
+target databases for different modes and do not switch an existing managed target between modes.
