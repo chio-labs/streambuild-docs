@@ -10,12 +10,14 @@ result to create a ClickHouse table and the materialized view that writes into i
 
 ```sql
 MODEL (
-  engine: "MergeTree()",
-  order_by: ["order_id", "_replay_partition", "_replay_offset"],
-  partition_by: "toYYYYMM(event_at)",
-  ttl: "event_at + INTERVAL 30 DAY",
-  settings: {index_granularity: 8192},
-  replay_anchor: auto,
+  engine "MergeTree()",
+  order_by ["order_id", "_replay_partition", "_replay_offset"],
+  partition_by "toYYYYMM(event_at)",
+  ttl "event_at + INTERVAL 30 DAY",
+  settings (
+    index_granularity 8192,
+  ),
+  replay_anchor auto,
 );
 
 SELECT
@@ -27,6 +29,16 @@ SELECT
   _replay_timestamp::DateTime64(3) AS _replay_timestamp
 FROM __source("orders")
 ```
+
+The header uses SQLBuild syntax:
+
+- fields are whitespace-separated `key value` entries
+- lists use `[...]`
+- nested mappings use `(...)`
+- commas are optional separators and may trail the final entry
+- values containing spaces must be quoted
+
+YAML-like `key: value` and `{...}` mappings are not accepted. `MODEL ();` uses all defaults.
 
 ## SQL contract
 
@@ -50,7 +62,7 @@ or `EXCEPT` is rejected; wrap it in a CTE and finish with a typed projection.
 | `partition_by` | none | Partition expression |
 | `ttl` | none | ClickHouse TTL expression |
 | `settings` | none | Table settings mapping |
-| `replay_anchor` | `auto` | Use `never` to prevent this model becoming a replay anchor |
+| `replay_anchor` | `auto` | Use `replay_anchor never` to prevent this model becoming a replay anchor |
 | `replay_on_change` | inherited | Virtual-environment change policy |
 | `bounded_replay_fallback` | `full` | Virtual-environment fallback for unseedable models |
 

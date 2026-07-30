@@ -36,7 +36,7 @@ selected closure. A model can be an anchor when it:
 - preserves the lineage required by its source mode
 - is non-aggregate
 - has no mutable side reference
-- does not set `replay_anchor: never`
+- does not set `replay_anchor never`
 
 StreamBuild derives anchors from typed graph edges. A selected model also includes its descendants.
 
