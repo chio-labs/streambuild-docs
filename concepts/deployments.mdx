@@ -3,8 +3,6 @@ title: "Virtual Environments"
 description: "Opt-in staged backfills, assessment, publishing, and lifecycle operations."
 ---
 
-# Virtual environments
-
 Virtual environments preserve StreamBuild's versioned deployment workflow. Enable them for the
 whole invocation:
 
@@ -44,8 +42,8 @@ stb audit backfill --deployment-id 20260729T120000Z_ab12cd
 ```
 
 Assessment compares staged and active data, checks replay coverage, and runs applicable SQL audits.
-Error-severity quality failures produce a `not_ready` assessment; warning failures are reported as
-caution.
+Error-severity quality failures produce a `not_ready` assessment. Warning-severity failures appear
+in the audit results but do not by themselves change the replay-readiness assessment.
 
 <Warning>
   Assessment is an operator safety step, not an enforced publish lock. `stb publish` does not
@@ -72,17 +70,19 @@ from.
 
 ```bash
 stb doctor
-stb repair active-view --table tbl__orders --deployment-id <id>
+DEPLOYMENT_ID="replace-with-deployment-id"
+stb repair active-view --table tbl__orders --deployment-id "$DEPLOYMENT_ID"
 stb reconcile
 stb reconcile --apply
 stb janitor
 stb janitor --retention-days 30 --apply
 ```
 
-- `doctor` diagnoses stable-view and deployment-reference problems.
-- `repair active-view` points one broken logical view at a known deployment.
-- `reconcile` previews or records a compatible live metadata baseline.
-- `janitor` previews or removes stale deployment objects while protecting active and recent state.
+- [`doctor`](/cli/doctor) diagnoses stable-view and deployment-reference problems.
+- [`repair active-view`](/cli/repair) points one broken logical view at a known deployment.
+- [`reconcile`](/cli/reconcile) previews or records a compatible live metadata baseline.
+- [`janitor`](/cli/janitor) previews or removes stale deployment objects while protecting active and
+  recent state.
 
 These commands are virtual-environment-only. There is no automatic mode conversion or direct-mode
 equivalent.

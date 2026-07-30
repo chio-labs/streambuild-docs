@@ -6,7 +6,7 @@
   "colors": {
     "primary": "#087E8B",
     "light": "#0EA5A8",
-    "dark": "#075D67"
+    "dark": "#0D9488"
   },
   "logo": {
     "light": "/streambuild_logo_light_cropped.png",
@@ -62,11 +62,12 @@
       }
     ]
   },
-  "topbar": {
+  "navbar": {
     "links": [
       {
         "label": "GitHub",
-        "url": "https://github.com/chio-labs/streambuild"
+        "href": "https://github.com/chio-labs/streambuild",
+        "type": "github"
       }
     ]
   },

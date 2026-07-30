@@ -3,8 +3,6 @@ title: "Orders Demo"
 description: "Run a ten-model Kafka-to-ClickHouse project with tests, audits, replay, and publish."
 ---
 
-# Orders demo
-
 The repository includes a runnable virtual-environment project driven by synthetic e-commerce
 events:
 
@@ -18,6 +16,14 @@ events:
   staged audit, and publish. For the default direct workflow, follow the
   [quickstart](/quickstart).
 </Note>
+
+## Prerequisites
+
+- Python 3.12 or newer
+- Git
+- [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+- [Docker with Compose](https://docs.docker.com/compose/install/)
+- `curl`
 
 ## Get the project
 
@@ -47,14 +53,26 @@ examples/orders_demo/
 
 ```bash
 docker compose -f examples/orders_demo/docker/compose.yml up -d --build
+
+until docker compose -f examples/orders_demo/docker/compose.yml \
+  exec -T redpanda rpk cluster health >/dev/null 2>&1; do
+  sleep 1
+done
+
+until curl --fail --silent 'http://localhost:18123/ping' >/dev/null; do
+  sleep 1
+done
+
+docker compose -f examples/orders_demo/docker/compose.yml logs --tail 1 producer
 ```
 
-The producer begins writing to `source.order_events.live`. Local endpoints are:
+After both services report ready, confirm that the producer log contains `tick: sent` before
+continuing. The producer writes to `source.order_events.live`. Local endpoints are:
 
 | Service | Address |
 |---|---|
 | Redpanda broker | `localhost:19092` |
-| Redpanda Console | [http://localhost:18081](http://localhost:18081) |
+| Redpanda Console | `http://localhost:18081` |
 | ClickHouse HTTP | `localhost:18123` |
 | ClickHouse native | `localhost:19000` |
 
@@ -89,6 +107,11 @@ source:order_events
 preserve the four `_replay_*` lineage columns; aggregate models place replay predicates on their
 inputs instead of projecting post-aggregate lineage.
 
+`orders` feeds `order_status_changes`, `order_items`, `region_lookup`, and `enriched_orders`.
+`order_status_changes` feeds `avg_fulfillment_time`; `order_items` feeds `daily_revenue` and
+`hourly_order_volume`; and `region_lookup` is a side reference for `enriched_orders`.
+`order_cancellations` feeds `daily_cancellation_rates`.
+
 ## Run SQL tests
 
 ```bash
@@ -119,13 +142,14 @@ and the exact audit and publish follow-up commands.
 ## Audit the deployment
 
 ```bash
+DEPLOYMENT_ID="replace-with-id-from-backfill"
 stb audit backfill \
   --project-dir examples/orders_demo \
-  --deployment-id <id>
+  --deployment-id "$DEPLOYMENT_ID"
 ```
 
 The assessment combines replay readiness with singular and generic SQL audits. The example checks
-status values, NULL identifiers, line totals, future events, uniqueness, and aggregate invariants.
+status values, NULL identifiers, line totals, future events, and aggregate invariants.
 
 Stop and investigate if the assessment is `not_ready`; publish does not enforce that advisory
 result automatically.
@@ -133,9 +157,10 @@ result automatically.
 ## Publish
 
 ```bash
+DEPLOYMENT_ID="replace-with-id-from-backfill"
 stb publish \
   --project-dir examples/orders_demo \
-  --deployment-id <id>
+  --deployment-id "$DEPLOYMENT_ID"
 ```
 
 Stable `tbl__*` views now point to the selected deployment tables. Query one through ClickHouse:

@@ -1,9 +1,7 @@
 ---
-title: "Quickstart"
+title: "Direct-mode Quickstart"
 description: "Build a direct-mode pipeline from an adopted ClickHouse stream table."
 ---
-
-# Direct-mode quickstart
 
 This guide creates one local ClickHouse table, adopts it as a replay source, and builds a live
 materialized-view target with `stb build`.
@@ -12,7 +10,9 @@ materialized-view target with `stb build`.
 
 - Python 3.12 or newer
 - [Docker](https://docs.docker.com/get-docker/)
-- Git and `uv`
+- Git
+- [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+- `curl`
 
 ## 1. Install StreamBuild
 
@@ -26,9 +26,15 @@ stb --help
 ## 2. Start ClickHouse
 
 ```bash
+docker rm --force --volumes streambuild-clickhouse >/dev/null 2>&1 || true
 docker run --detach --name streambuild-clickhouse \
+  --env CLICKHOUSE_SKIP_USER_SETUP=1 \
   --publish 18123:8123 --publish 19000:9000 \
   clickhouse/clickhouse-server:24.8
+
+until curl --fail --silent 'http://localhost:18123/ping' >/dev/null; do
+  sleep 1
+done
 ```
 
 Create an input table with offset and timestamp columns. ClickHouse HTTP accepts one statement per
@@ -47,6 +53,9 @@ CREATE TABLE IF NOT EXISTS quickstart.orders_input (
   amount_cents UInt64
 ) ENGINE = MergeTree ORDER BY (event_partition, event_offset)
 '
+
+curl 'http://localhost:18123/' \
+  --data-binary 'TRUNCATE TABLE quickstart.orders_input'
 
 curl 'http://localhost:18123/' --data-binary "
 INSERT INTO quickstart.orders_input VALUES
@@ -78,6 +87,7 @@ default_target = "local"
 host = "localhost"
 port = 18123
 username = "default"
+password = ""
 
 [targets.local]
 database = "quickstart"
@@ -130,8 +140,9 @@ stb discover --project-dir quickstart
 stb compile --project-dir quickstart
 ```
 
-Compilation is offline. Review `quickstart/target/manifest.json`, `streambuild_dag.json`, and the
-generated SQL under `target/compiled/`.
+Compilation is offline. Review `quickstart/target/manifest.json`,
+`quickstart/target/streambuild_dag.json`, and the generated SQL under
+`quickstart/target/compiled/`.
 
 ## 5. Plan and build
 
@@ -151,6 +162,17 @@ curl 'http://localhost:18123/?query=SELECT%20*%20FROM%20quickstart.tbl__order_to
   Replay uses an inclusive cutoff and is intentionally at least once around that boundary. Choose
   model SQL and ClickHouse engines that tolerate duplicate delivery where required.
 </Note>
+
+The startup command replaces any previous quickstart container, and the input setup truncates the
+source table, so you can repeat the guide without duplicating input rows.
+
+## Clean up
+
+```bash
+docker rm --force --volumes streambuild-clickhouse
+```
+
+This removes the quickstart container and its anonymous ClickHouse data volume.
 
 ## Next steps
 

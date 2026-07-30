@@ -3,8 +3,6 @@ title: "ClickHouse Architecture"
 description: "Managed source objects, model relations, deployment names, and metadata."
 ---
 
-# ClickHouse architecture
-
 StreamBuild keeps authored logical identity separate from ClickHouse realization. The current
 adapter is ClickHouse only.
 
@@ -21,6 +19,8 @@ kafka__order_events       Kafka engine table
 ```
 
 The landing table carries raw `kafka_value` plus normalized replay columns.
+The Kafka engine table feeds the landing materialized view, which writes retained history into the
+raw MergeTree table.
 
 ## Direct-mode model graph
 
@@ -38,6 +38,8 @@ raw__order_events
 
 `tbl__*` names are physical model tables in direct mode. A build drops and recreates selected model
 tables and MVs while preserving managed source objects.
+Here the raw source feeds `mv__orders`, which writes `tbl__orders`; that table then feeds
+`mv__daily_revenue`, which writes `tbl__daily_revenue`.
 
 ## Virtual-environment model graph
 
@@ -53,6 +55,8 @@ tbl__orders   stable View -> tbl__orders__<published_deployment_id>
 
 In virtual environments, deployment-specific relations hold data and unsuffixed `tbl__*` names are
 stable ClickHouse views. Publish replaces those view bindings one relation at a time.
+The raw source feeds the deployment-specific orders MV and table. The stable `tbl__orders` view
+points to the table belonging to the published deployment.
 
 ## Adopted sources
 
@@ -67,6 +71,8 @@ orders_existing          user-owned source
 ```
 
 StreamBuild reads and validates the source but does not mutate it.
+The user-owned `orders_existing` table feeds `mv__orders_enriched`, which writes
+`tbl__orders_enriched`.
 
 ## Naming
 
