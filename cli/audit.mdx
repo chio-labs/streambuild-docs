@@ -3,8 +3,6 @@ title: "stb audit"
 description: "Run data-quality audits against live or staged relations."
 ---
 
-# `stb audit`
-
 Run authored SQL audits against current relations:
 
 ```bash
@@ -26,12 +24,14 @@ Assess a staged virtual-environment deployment:
 
 ```bash
 stb audit backfill
-stb audit backfill --deployment-id <id>
-stb audit backfill --deployment-id <id> --json
+DEPLOYMENT_ID="replace-with-deployment-id"
+stb audit backfill --deployment-id "$DEPLOYMENT_ID"
+stb audit backfill --deployment-id "$DEPLOYMENT_ID" --json
 ```
 
 This combines staged-versus-active comparison, replay readiness, and applicable SQL audits. It does
-not accept `--select`.
+not accept `--select`. Warning-severity audit failures are reported but do not by themselves change
+the replay-readiness assessment.
 
 If the ID is omitted, one candidate is selected automatically. Zero or multiple candidates return
 an actionable error. A successful assessment command exits 0 even when the reported assessment is

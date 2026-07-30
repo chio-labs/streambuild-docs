@@ -3,8 +3,6 @@ title: "Sources and Pipelines"
 description: "Reusable streaming sources and the pipelines that consume them."
 ---
 
-# Sources and pipelines
-
 Sources are project-wide identities under `sources/*.yml`. Pipelines reference those identities
 from `pipelines/<name>/pipeline.yml`.
 
@@ -48,6 +46,10 @@ mv__order_events      landing materialized view
 Managed sources support `offsets`, `timestamp`, and `landed_at`. `JSONAsString` is currently the
 only supported Kafka format. StreamBuild owns these source objects and blocks incompatible source
 drift rather than silently recreating them.
+
+`format` defaults to `JSONAsString`. When `consumer_group` is omitted, the effective ClickHouse
+group is `streambuild_<source>_<source>_<database>`. Hyphens in the database suffix are normalized
+to underscores so each target database receives an isolated consumer group.
 
 ## Adopted stream table
 

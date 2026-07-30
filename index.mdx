@@ -3,8 +3,6 @@ title: "Introduction"
 description: "Declarative streaming data pipelines for ClickHouse."
 ---
 
-# Build ClickHouse streams from versioned SQL
-
 StreamBuild compiles typed SQL models into ClickHouse tables and materialized views, plans their
 dependencies, and rebuilds them from retained streaming history.
 
@@ -57,3 +55,6 @@ stb audit
 ```
 
 Run commands from anywhere inside a project, or pass `--project-dir` explicitly.
+
+`stb build` already runs applicable audits. Use the separate `stb audit` command when you want to
+rerun live checks later without rebuilding.

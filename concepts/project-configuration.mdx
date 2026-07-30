@@ -3,8 +3,6 @@ title: "Project Configuration"
 description: "TOML targets, local overrides, variables, connections, and mode selection."
 ---
 
-# Project configuration
-
 Every project has a committed `streambuild_project.toml`. Legacy YAML project files are rejected.
 
 ```toml
@@ -36,6 +34,10 @@ environment_name = "target-dev"
 
 `name` and `default_target` are required. `adapter` defaults to `clickhouse`.
 
+Commands that connect to ClickHouse require `host`, `port`, `username`, and `password` after all
+configuration layers are merged. StreamBuild supplies no connection defaults. Use `password = ""`
+when the ClickHouse account intentionally has an empty password.
+
 ## Direct mode and virtual environments
 
 Direct mode is selected when `virtual_environments` is omitted or false:
@@ -61,6 +63,7 @@ Use ignored `streambuild_local.toml` for developer-specific values:
 
 ```toml
 target = "personal"
+adapter = "clickhouse"
 
 [settings]
 virtual_environments = true
@@ -73,7 +76,8 @@ port = 18123
 database = "analytics_klonge"
 ```
 
-Local configuration cannot replace the project name or authored resources.
+Local configuration can override the target, adapter, settings, connection, variables, and target
+values. It cannot replace the project name or authored resources.
 
 ## Precedence
 

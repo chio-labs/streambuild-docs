@@ -3,8 +3,6 @@ title: "stb plan"
 description: "Preview direct rebuilds or virtual-environment deployments without writing."
 ---
 
-# `stb plan`
-
 Compare the compiled project with ClickHouse and print a read-only plan.
 
 ```bash
@@ -12,6 +10,7 @@ stb plan
 stb plan --select orders
 stb plan --select pipeline:order_events --json
 stb plan --verbose
+stb plan -v
 ```
 
 The effective project mode chooses the planner:
@@ -45,5 +44,5 @@ Both require `--select` and are mutually exclusive.
 ## Common options
 
 Connecting commands accept `--host`, `--port`, `--username`, `--password`, `--database`,
-`--target`, `--vars`, and `--project-dir`. `--json` emits structured output and `--verbose` includes
-full schema diffs.
+`--target`, `--vars`, and `--project-dir`. `--json` emits structured output and `--verbose` (`-v`)
+includes full schema diffs.

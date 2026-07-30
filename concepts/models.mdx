@@ -3,8 +3,6 @@ title: "Models"
 description: "Typed SQL models, references, storage settings, and graph semantics."
 ---
 
-# Models
-
 Each model is one SQL file with a `MODEL()` header and one outer `SELECT`. StreamBuild uses the
 result to create a ClickHouse table and the materialized view that writes into it.
 
@@ -30,7 +28,7 @@ SELECT
 FROM __source("orders")
 ```
 
-The header uses SQLBuild syntax:
+The header grammar is:
 
 - fields are whitespace-separated `key value` entries
 - lists use `[...]`
@@ -66,7 +64,8 @@ or `EXCEPT` is rejected; wrap it in a CTE and finish with a typed projection.
 | `replay_on_change` | inherited | Virtual-environment change policy |
 | `bounded_replay_fallback` | `full` | Virtual-environment fallback for unseedable models |
 
-Replay-policy fields are rejected in direct mode.
+`replay_on_change` and `bounded_replay_fallback` are rejected in direct mode. `replay_anchor`
+remains valid because direct rebuilds also need replay roots.
 
 ## Driving references
 

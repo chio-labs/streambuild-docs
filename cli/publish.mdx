@@ -3,13 +3,12 @@ title: "stb publish"
 description: "Replace stable view bindings with one staged deployment."
 ---
 
-# `stb publish`
-
 Publish a completed virtual-environment deployment:
 
 ```bash
-stb publish --deployment-id <id>
-stb publish --deployment-id <id> --json
+DEPLOYMENT_ID="replace-with-deployment-id"
+stb publish --deployment-id "$DEPLOYMENT_ID"
+stb publish --deployment-id "$DEPLOYMENT_ID" --json
 ```
 
 For each managed relation, StreamBuild atomically replaces the stable `tbl__*` view so it points to
