@@ -29,6 +29,7 @@ sources:
     topic: source.order_events.live
     consumer_group: optional_group
     format: JSONAsString
+    ttl: _replay_landed_at + INTERVAL 30 DAY
     settings:
       kafka_num_consumers: "1"
     replay_boundary:
@@ -46,6 +47,12 @@ mv__order_events      landing materialized view
 Managed sources support `offsets`, `timestamp`, and `landed_at`. `JSONAsString` is currently the
 only supported Kafka format. StreamBuild owns these source objects and blocks incompatible source
 drift rather than silently recreating them.
+
+`ttl` is an optional ClickHouse expression applied to the managed `raw__order_events` landing
+table. It overrides `[defaults].managed_source_ttl` from `streambuild_project.toml`. Use
+`_replay_landed_at` for ingestion-age retention, for example
+`_replay_landed_at + INTERVAL 30 DAY`. If the source and project default both omit TTL,
+StreamBuild creates the landing table without a TTL clause.
 
 `format` defaults to `JSONAsString`. When `consumer_group` is omitted, the effective ClickHouse
 group is `streambuild_<source>_<source>_<database>`. Hyphens in the database suffix are normalized
@@ -70,6 +77,7 @@ sources:
 
 The table must already exist as a bare relation name in the selected target database. StreamBuild
 validates its replay columns but never creates, drops, or replaces the adopted table.
+Because StreamBuild does not own adopted tables, `ttl` is rejected on `stream_table` sources.
 
 | Mode | Required mappings |
 |---|---|

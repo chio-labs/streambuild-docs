@@ -22,6 +22,9 @@ password = "${ENV:CLICKHOUSE_PASSWORD}"
 [vars]
 environment_name = "dev"
 
+[defaults]
+managed_source_ttl = "_replay_landed_at + INTERVAL 14 DAY"
+
 [targets.dev]
 database = "analytics_dev"
 
@@ -37,6 +40,20 @@ environment_name = "target-dev"
 Commands that connect to ClickHouse require `host`, `port`, `username`, and `password` after all
 configuration layers are merged. StreamBuild supplies no connection defaults. Use `password = ""`
 when the ClickHouse account intentionally has an empty password.
+
+## Managed source retention
+
+Set an optional project-wide TTL for StreamBuild-managed Kafka landing tables:
+
+```toml
+[defaults]
+managed_source_ttl = "_replay_landed_at + INTERVAL 14 DAY"
+```
+
+The value is a ClickHouse TTL expression. `_replay_landed_at` is the recommended clock because it
+tracks when StreamBuild persisted the Kafka record, independently of the event timestamp. A managed
+source can override this default with its own `ttl`. When neither level defines a value, StreamBuild
+does not add a TTL clause and retains landing data indefinitely.
 
 ## Direct mode and virtual environments
 
