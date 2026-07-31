@@ -3,8 +3,9 @@ title: "Models"
 description: "Typed SQL models, references, storage settings, and graph semantics."
 ---
 
-Each model is one SQL file with a `MODEL()` header and one outer `SELECT`. StreamBuild uses the
-result to create a ClickHouse table and the materialized view that writes into it.
+Each model is one SQL file with a `MODEL()` header and one outer `SELECT`. Models default to
+streaming tables: StreamBuild creates a ClickHouse table and the materialized view that writes into
+it. A `kind view` model instead creates an ordinary terminal query view.
 
 ```sql
 MODEL (
@@ -55,6 +56,8 @@ or `EXCEPT` is rejected; wrap it in a CTE and finish with a typed projection.
 
 | Field | Default | Purpose |
 |---|---|---|
+| `kind` | `table` | `table` for streaming storage or `view` for an ordinary terminal view |
+| `relation_name` | none | Exact warehouse relation name, overriding prefix-based naming |
 | `engine` | `"MergeTree()"` | ClickHouse MergeTree-family table engine |
 | `order_by` | `["_replay_timestamp"]` | Table sorting key expressions |
 | `partition_by` | none | Partition expression |
@@ -66,6 +69,9 @@ or `EXCEPT` is rejected; wrap it in a CTE and finish with a typed projection.
 
 `replay_on_change` and `bounded_replay_fallback` are rejected in direct mode. `replay_anchor`
 remains valid because direct rebuilds also need replay roots.
+
+`engine`, `order_by`, `partition_by`, `ttl`, `settings`, `replay_anchor`, `replay_on_change`, and
+`bounded_replay_fallback` are table-only and are rejected on views.
 
 ## Driving references
 
@@ -98,6 +104,32 @@ LEFT JOIN __ref("region_lookup", ref_type="reference") AS regions
 
 Mutable references emit a replay warning and prevent the model from being a replay anchor. Both
 side-reference types participate in graph scope and ordering.
+
+## Terminal views
+
+A terminal view has no driving input and may read any number of sources or models:
+
+```sql
+MODEL (
+  kind view,
+  relation_name customer_orders,
+);
+
+SELECT
+  orders.order_id::UInt64 AS order_id,
+  payments.amount_cents::UInt64 AS amount_cents
+FROM __ref("orders") AS orders
+JOIN __ref("payments") AS payments USING (order_id)
+```
+
+View references do not use `ref_type`: every reference is an ordinary query dependency. Views do
+not participate in source inference, replay roots, watermarks, retention, or replay population. A
+view must have zero downstream model edges across the complete project graph, including
+cross-pipeline references. Other models cannot reference it, while tests and audits may target it.
+
+Without `relation_name`, tables use the effective `table_prefix` and views use `view_prefix`.
+Pipeline naming overrides project naming, whose defaults are `tbl__` and `view__`. Logical refs
+continue to use filename stems. `kafka__`, `raw__`, and `mv__` are reserved internal prefixes.
 
 ## Replay columns
 
