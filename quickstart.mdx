@@ -73,7 +73,6 @@ quickstart/
     orders.yml
   pipelines/
     orders/
-      pipeline.yml
       order_totals.sql
 ```
 
@@ -110,12 +109,6 @@ sources:
         _replay_timestamp: event_time
 ```
 
-`quickstart/pipelines/orders/pipeline.yml`:
-
-```yaml
-source: orders
-```
-
 `quickstart/pipelines/orders/order_totals.sql`:
 
 ```sql
@@ -132,6 +125,9 @@ SELECT
   CAST(_replay_timestamp AS DateTime64(3)) AS _replay_timestamp
 FROM __source("orders")
 ```
+
+The direct child directory `pipelines/orders/` defines the `orders` pipeline. StreamBuild infers
+its source by following the model's `__source("orders")` driving input to the source registry.
 
 ## 4. Discover and compile
 
