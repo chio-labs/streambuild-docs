@@ -58,8 +58,8 @@ breaking = "full"
 non_breaking = "bounded-7d"
 ```
 
-The same fields can appear in `pipeline.yml` or `MODEL()`; model wins over pipeline, which wins over
-project. Durations accept `d`, `h`, `m`, or `s`.
+The same fields can appear in an optional `pipeline.toml` or `MODEL()` header; model wins over
+pipeline, which wins over project. Durations accept `d`, `h`, `m`, or `s`.
 
 When a model cannot preserve older seeded history, typically because aggregation prevents a clean
 split, `bounded_replay_fallback` controls the result:

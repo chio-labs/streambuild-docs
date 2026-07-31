@@ -3,8 +3,8 @@ title: "Sources and Pipelines"
 description: "Reusable streaming sources and the pipelines that consume them."
 ---
 
-Sources are project-wide identities under `sources/*.yml`. Pipelines reference those identities
-from `pipelines/<name>/pipeline.yml`.
+Sources are project-wide identities under `sources/*.yml`. Each direct child directory under
+`pipelines/` defines one pipeline.
 
 ```text
 streambuild_project.toml
@@ -12,7 +12,6 @@ sources/
   order_events.yml
 pipelines/
   order_events/
-    pipeline.yml
     orders.sql
     order_items.sql
 ```
@@ -88,27 +87,24 @@ Because StreamBuild does not own adopted tables, `ttl` is rejected on `stream_ta
 Integer roles must use ClickHouse integer types. Timestamp roles must use `DateTime` or
 `DateTime64`. Adopted sources do not support `landed_at`.
 
-## Pipeline declaration
+## Pipeline directories
 
-`pipelines/order_events/pipeline.yml` contains the source identity:
+The direct child directory name is the pipeline name. Model files are discovered recursively, and
+each model name is its SQL filename stem. StreamBuild follows every model's `__source(...)` or
+untyped `__ref(...)` driving input transitively until it reaches the source registry. Every pipeline
+must resolve to exactly one registered source. Pipelines with no models, multiple source roots,
+duplicate model stems, or project-wide duplicate model names are rejected.
 
-```yaml
-source: order_events
-```
+An optional `pipeline.toml` may set virtual-environment replay policy for every model in that
+pipeline:
 
-The directory name is the pipeline name. Model files are discovered recursively, and each model
-name is its SQL filename stem. Every pipeline needs at least one model. Nested `pipeline.yml` files,
-duplicate model stems, and project-wide duplicate model names are rejected.
+```toml
+bounded_replay_fallback = "full"
 
-Virtual-environment replay policies may also be set at pipeline level:
-
-```yaml
-source: order_events
-replay_on_change:
-  breaking: full
-  non_breaking: bounded-7d
-bounded_replay_fallback: full
+[replay_on_change]
+breaking = "full"
+non_breaking = "bounded-7d"
 ```
 
 These policy fields are invalid in direct mode because direct builds always rebuild their selected
-closure.
+closure. Pipelines that need no pipeline-wide override omit `pipeline.toml` entirely.
