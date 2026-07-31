@@ -25,6 +25,10 @@ environment_name = "dev"
 [defaults]
 managed_source_ttl = "_replay_landed_at + INTERVAL 14 DAY"
 
+[naming]
+table_prefix = "tbl__"
+view_prefix = "view__"
+
 [targets.dev]
 database = "analytics_dev"
 
@@ -54,6 +58,25 @@ The value is a ClickHouse TTL expression. `_replay_landed_at` is the recommended
 tracks when StreamBuild persisted the Kafka record, independently of the event timestamp. A managed
 source can override this default with its own `ttl`. When neither level defines a value, StreamBuild
 does not add a TTL clause and retains landing data indefinitely.
+
+## Model relation naming
+
+Set project-wide prefixes for table and terminal-view relations:
+
+```toml
+[naming]
+table_prefix = "tbl__"
+view_prefix = "view__"
+```
+
+These are the built-in defaults. A pipeline can partially override them in its optional
+`pipeline.toml`, and a model can set an exact `relation_name` in `MODEL()`. Resolution order is exact
+model name, pipeline prefix, project prefix, then built-in prefix. Logical model identity remains
+the SQL filename stem, so `__ref()`, selectors, tests, and audits do not change when warehouse
+naming changes.
+
+`kafka__`, `raw__`, and `mv__` are reserved for StreamBuild internals. Deployment suffixes are also
+internal and cannot be configured. Effective relation names must be unique unqualified identifiers.
 
 ## Direct mode and virtual environments
 

@@ -90,10 +90,12 @@ Integer roles must use ClickHouse integer types. Timestamp roles must use `DateT
 ## Pipeline directories
 
 The direct child directory name is the pipeline name. Model files are discovered recursively, and
-each model name is its SQL filename stem. StreamBuild follows every model's `__source(...)` or
+each model name is its SQL filename stem. StreamBuild follows every table model's `__source(...)` or
 untyped `__ref(...)` driving input transitively until it reaches the source registry. Every pipeline
-must resolve to exactly one registered source. Pipelines with no models, multiple source roots,
-duplicate model stems, or project-wide duplicate model names are rejected.
+containing table models must resolve to exactly one registered source. Terminal views are excluded
+from source inference, so a view-only pipeline is valid and source-less. Pipelines with no models,
+multiple table source roots, duplicate model stems, or project-wide duplicate model names are
+rejected.
 
 An optional `pipeline.toml` may set virtual-environment replay policy for every model in that
 pipeline:
@@ -104,7 +106,11 @@ bounded_replay_fallback = "full"
 [replay_on_change]
 breaking = "full"
 non_breaking = "bounded-7d"
+
+[naming]
+view_prefix = "reporting__"
 ```
 
 These policy fields are invalid in direct mode because direct builds always rebuild their selected
-closure. Pipelines that need no pipeline-wide override omit `pipeline.toml` entirely.
+closure. Naming overrides work in both modes and may partially override project `[naming]` values.
+Pipelines that need no pipeline-wide override omit `pipeline.toml` entirely.
