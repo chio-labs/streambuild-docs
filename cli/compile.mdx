@@ -1,6 +1,6 @@
 ---
 title: "stb compile"
-description: "Compile the project into canonical SQL, DDL, graph, and workflow artifacts."
+description: "Compile the project into canonical SQL, DDL, graph, test, and audit artifacts."
 ---
 
 Compile every project resource without connecting to ClickHouse.
@@ -21,7 +21,6 @@ target/
     models/<pipeline>/<model>.sql
     resources/sources/...
     resources/models/...
-    workflows/<pipeline>/...
     audits/...
     tests/...
 ```
@@ -30,6 +29,7 @@ StreamBuild builds the static target in staging and replaces `compiled/`, `manif
 `streambuild_dag.json` individually with atomic filesystem operations and rollback on publication
 failure. The three owners are not exposed as one graph-atomic snapshot. Runtime artifacts under
 `target/run/` are preserved. Sensitive Kafka broker userinfo and source settings are redacted.
+Executable build workflows require connected warehouse state and are not compile artifacts.
 
 | Option | Purpose |
 |---|---|
