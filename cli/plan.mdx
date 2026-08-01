@@ -1,11 +1,9 @@
 ---
 title: "stb plan"
-description: "Plan direct rebuilds or virtual-environment deployments against ClickHouse."
+description: "Preview direct rebuilds or virtual-environment deployments without writing."
 ---
 
-Compare the compiled project with ClickHouse and print a warehouse-dependent plan. Planning does
-not mutate ClickHouse, but a successful command atomically writes the deterministic JSON plan to
-`target/run/plan/deployment-plan.json`.
+Compare the compiled project with ClickHouse and print a read-only plan.
 
 ```bash
 stb plan
@@ -48,7 +46,3 @@ Both require `--select` and are mutually exclusive.
 Connecting commands accept `--host`, `--port`, `--username`, `--password`, `--database`,
 `--target`, `--vars`, and `--project-dir`. `--json` emits structured output and `--verbose` (`-v`)
 includes full schema diffs.
-
-The bytes printed by `stb plan --json` are exactly the bytes persisted in the plan artifact. Text
-mode uses the same JSON serializer for persistence independently of the operator-facing display.
-Failed compilation or connected planning leaves any prior complete plan artifact unchanged.
