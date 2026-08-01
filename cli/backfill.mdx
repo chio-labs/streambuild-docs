@@ -25,6 +25,11 @@ Before writing, StreamBuild displays the plan and prompts for confirmation. `--a
 the prompt; `--json` execution requires auto approval. `--verbose` and `-v` show complete schema
 diffs.
 
+After approval and immediately before execution, StreamBuild atomically writes the exact confirmed
+warehouse-derived plan to `target/run/backfill/deployment-plan.json`. Backfill executes that same
+in-memory plan rather than planning again after confirmation. The path is isolated from the plan
+and direct-build artifact owners.
+
 After backfill, assess and publish the same deployment:
 
 ```bash
