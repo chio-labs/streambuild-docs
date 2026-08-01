@@ -24,6 +24,11 @@ Proceed with build? [y/N]
 Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution requires
 `--auto-approve`.
 
+After approval and immediately before execution, StreamBuild atomically writes the exact confirmed
+plan to `target/run/build/deployment-plan.json`. Before any warehouse mutation, it reloads ownership
+state and aborts if the confirmed classifications have changed. It never adapts or regenerates the
+confirmed plan against the new state. Plan, build, and backfill use separate command-owned paths.
+
 | Option | Purpose |
 |---|---|
 | `--select VALUE` | Bare model or `pipeline:<name>`; repeatable |

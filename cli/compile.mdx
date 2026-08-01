@@ -1,6 +1,6 @@
 ---
 title: "stb compile"
-description: "Compile the project into canonical SQL, DDL, graph, and workflow artifacts."
+description: "Compile the project into canonical SQL, DDL, graph, and bootstrap artifacts."
 ---
 
 Compile every project resource without connecting to ClickHouse.
@@ -21,7 +21,10 @@ target/
     models/<pipeline>/<model>.sql
     resources/sources/...
     resources/models/...
-    workflows/<pipeline>/...
+    bootstrap/
+      bootstrap.json
+      bootstrap.sql
+      steps/0001_....sql
     audits/...
     tests/...
 ```
@@ -30,6 +33,30 @@ StreamBuild builds the static target in staging and replaces `compiled/`, `manif
 `streambuild_dag.json` individually with atomic filesystem operations and rollback on publication
 failure. The three owners are not exposed as one graph-atomic snapshot. Runtime artifacts under
 `target/run/` are preserved. Sensitive Kafka broker userinfo and source settings are redacted.
+
+## Project bootstrap
+
+`compiled/bootstrap/` is one project-wide greenfield DDL bundle because sources can be shared and
+models can reference other pipelines. Resources are deduplicated and ordered as follows:
+
+1. Passive managed Kafka engine tables
+2. Managed raw tables
+3. Every model table in logical DAG order across pipelines
+4. Every model materialized view in logical DAG order
+5. Ordinary terminal views after their dependencies
+6. Managed Kafka landing materialized views last
+
+Step numbers are continuous. Each step file contains exactly one semicolon-terminated statement.
+`bootstrap.sql` is the exact `"\n".join(step_contents)` concatenation in `bootstrap.json` order, so
+the numbered and combined forms execute the same bytes with only that documented separator.
+
+`bootstrap.json` declares its project scope, activation phase per step, preconditions, and
+exclusions. The database must already exist and target names must be absent. External writers to
+adopted sources must be quiesced for bootstrap consistency. The bundle does not reconcile or drop
+objects, capture replay boundaries, replay data, write ownership or metadata, run tests or audits,
+create virtual-environment deployment state, or publish bindings.
+
+Offline compile never emits `deployment-plan.json`; connected commands own runtime plans.
 
 | Option | Purpose |
 |---|---|
