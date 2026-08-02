@@ -40,14 +40,18 @@ Graph `+` syntax, tags, paths, globs, and exclusions are not supported by `plan`
 
 ## Replay controls
 
-The following apply only to virtual environments:
-
 ```bash
 stb plan --select orders --full-refresh
 stb plan --select orders --start-time 2026-07-01T00:00:00Z
 ```
 
 Both require `--select` and are mutually exclusive.
+
+`--full-refresh` applies only to virtual environments. `--start-time` applies to both modes. In
+direct mode it shows the effective start time in plan text and the nullable top-level `start_time`
+field in plan JSON, and the exact workflow SQL includes every lower frontier used for preflight,
+coverage capture, and replay. Direct replay inputs must already exist and expose timestamp or
+landed-at lineage through the selected closure.
 
 ## Common options
 
