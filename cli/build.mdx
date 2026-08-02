@@ -38,13 +38,23 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 | `--select VALUE` | Bare model or `pipeline:<name>`; repeatable |
 | `--deployment-id VALUE` | Fixed virtual deployment identity |
 | `--full-refresh` | Rebuild selected virtual roots from retained history |
-| `--start-time VALUE` | Bound selected virtual replay from a UTC timestamp |
+| `--start-time VALUE` | Bound selected direct or virtual replay from a UTC timestamp |
 | `--auto-approve` | Skip confirmation |
 | `--json` | Structured result; requires auto approval |
 | `--verbose`, `-v` | Show complete schema diffs |
 
-The selected model or pipeline includes all downstream models. `--deployment-id`, `--full-refresh`,
-and `--start-time` require virtual environments; direct mode rejects them before writing.
+The selected model or pipeline includes all downstream models. `--deployment-id` and
+`--full-refresh` require virtual environments. `--start-time` works in both modes, requires at least
+one selector, and cannot be combined with `--full-refresh`.
+
+In direct mode, `--start-time` is an unseeded bounded rebuild. StreamBuild preserves source
+definitions and rows, drops and recreates the selected closure at ordinary names, and omits derived
+output before the effective lower frontier. Direct `--full-refresh` is rejected because an ordinary
+direct build already replays all retained history.
+
+Bounded direct replay inputs must already exist and retain time lineage. Bootstrap missing managed
+sources with an ordinary direct build, and project timestamp or landed-at lineage through any
+intermediate model used as a replay input.
 
 ## Exact workflow artifacts
 

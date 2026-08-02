@@ -70,4 +70,6 @@ split, `bounded_replay_fallback` controls the result:
 | `bounded_without_history` | Replay only the bounded window and omit older history |
 
 `--full-refresh` forces full replay for selected virtual-environment models. `--start-time` requests
-a bounded replay from an explicit time and requires active published roots.
+a bounded replay from an explicit time. Virtual environments require active published roots and may
+seed pre-window history. Direct mode performs an unseeded destructive rebuild, preserves source
+relations unchanged, and intentionally omits pre-window derived output.

@@ -28,6 +28,7 @@ virtual_environments = false
 stb plan
 stb plan --select orders
 stb plan --select pipeline:order_events
+stb plan --select orders --start-time 2026-07-01T00:00:00Z
 ```
 
 Direct plans are intentionally conservative:
@@ -38,14 +39,16 @@ Direct plans are intentionally conservative:
 - matching warehouse state does not prune a requested rebuild
 - plans show destructive drop and create actions but make no modifications
 
-`--full-refresh` and `--start-time` are virtual-environment controls and are rejected in direct
-mode.
+`--start-time` requires at least one selector. It plans the ordinary selected downstream closure but
+bounds replay from the effective source frontier. `--full-refresh` remains unavailable because an
+ordinary direct build already replays all retained source history.
 
 ## Build behavior
 
 ```bash
 stb build
 stb build --select orders
+stb build --select orders --start-time 2026-07-01T00:00:00Z
 stb build --auto-approve
 ```
 
@@ -58,6 +61,17 @@ One build:
 5. recreates model tables and views in dependency order
 6. captures inclusive replay watermarks and replays retained history
 7. runs applicable SQL audits against the rebuilt direct tables
+
+With `--start-time`, the lifecycle stays destructive and unseeded: StreamBuild drops and recreates
+the same selected closure, then replays only the lower-and-upper-bounded source window. Managed and
+adopted source definitions and rows are not replaced, truncated, or deleted. Derived rows before
+the effective lower frontier are intentionally absent after success, and ownership records retain
+only the bounded coverage that was actually reconstructed.
+
+Every replay input in the selected closure must already exist and expose its configured timestamp
+or landed-at lineage. Run an ordinary direct build first to create a managed source. If an
+intermediate model becomes a replay input, project time lineage through that model before requesting
+`--start-time`.
 
 Direct model names are unsuffixed:
 
@@ -82,6 +96,11 @@ contribution would be incorrect.
 Direct builds are destructive and do not roll back. If a build fails after teardown, rerun
 `stb build` after correcting the cause. StreamBuild persists required replay coverage and refuses
 to silently use a shorter history window when source retention no longer covers it.
+
+A bounded build writes its clipped ownership coverage before teardown. Retrying the same start time
+therefore preserves the same lower frontier, while a fresh upper boundary can include newly arrived
+rows. A later start time intentionally narrows the protected window; an earlier start can widen it
+only while the source still retains the requested history.
 
 An error-severity audit makes the command fail after the new resources are live; it does not revert
 the rebuild.
