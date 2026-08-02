@@ -4,12 +4,14 @@ description: "Preview direct rebuilds or virtual-environment deployments without
 ---
 
 Compare the compiled project with ClickHouse and print a read-only warehouse plan. A successful
-command atomically writes the same deterministic JSON plan to `target/run/plan/plan.json`.
+command assembles the complete workflow that a build would execute against the same observed state,
+then atomically publishes its JSON and exact SQL without mutating ClickHouse.
 
 ```bash
 stb plan
 stb plan --select orders
 stb plan --select pipeline:order_events --json
+stb plan --deployment-id 20260701T120000Z_release202607
 stb plan --verbose
 stb plan -v
 ```
@@ -20,6 +22,11 @@ The effective project mode chooses the planner:
   include downstream closure. Matching objects are not pruned.
 - **Virtual environments:** plan changed deployment objects, replay roots, and policies against
   published and staged state.
+
+Use `--deployment-id` in virtual-environment mode to inspect exact deployment-specific physical
+names. Its timestamp prefix also fixes the deployment creation timestamp, so unchanged warehouse
+state and the same explicit identity produce deterministic workflow bytes. If omitted, `plan`
+generates a disposable preview identity.
 
 ## Selection
 
@@ -48,7 +55,29 @@ Connecting commands accept `--host`, `--port`, `--username`, `--password`, `--da
 `--target`, `--vars`, and `--project-dir`. `--json` emits structured output and `--verbose` (`-v`)
 includes full schema diffs.
 
+## Exact workflow artifacts
+
+After read-only connected inspection, StreamBuild atomically replaces the complete directory:
+
+```text
+target/run/plan/
+├── plan.json
+├── workflow.sql
+└── steps/
+    ├── 0001_<step-id>.sql
+    └── ...
+```
+
 The bytes printed by `stb plan --json` are exactly the bytes stored in `plan.json`; text mode writes
-the same JSON through the same serializer. The artifact is disposable visibility output, not local
-state, and StreamBuild never reads it to make planning or execution decisions. Failed compilation
-or connected planning leaves any previous complete artifact unchanged.
+the same JSON through the same serializer. Each numbered file is byte-identical to its workflow
+statement, and `workflow.sql` is those statements joined in order.
+
+Plan and build use the same connected preparation, workflow assemblers, ordering validation, and
+artifact serializer. They remain independent invocations: `stb build` inspects current warehouse
+state again and never reads, compares, promotes, or executes `target/run/plan/`. Warehouse changes
+between commands can therefore produce a different build workflow; build preflight assertions
+protect the state observed during its own preparation.
+
+All `target/run/` files are disposable visibility output, not local state. Failed compilation,
+connected inspection, workflow assembly, or publication leaves any previous complete plan artifact
+unchanged.
