@@ -18,15 +18,15 @@ not fail the command.
 Selectors support bare model names, `pipeline:<name>`, and optional leading `+` for upstream
 models. Multiple selectors are repeatable. Trailing `+` is not accepted by audit selection.
 
-## `stb audit backfill`
+## `stb audit deployment`
 
 Assess a staged virtual-environment deployment:
 
 ```bash
-stb audit backfill
+stb audit deployment
 DEPLOYMENT_ID="replace-with-deployment-id"
-stb audit backfill --deployment-id "$DEPLOYMENT_ID"
-stb audit backfill --deployment-id "$DEPLOYMENT_ID" --json
+stb audit deployment --deployment-id "$DEPLOYMENT_ID"
+stb audit deployment --deployment-id "$DEPLOYMENT_ID" --json
 ```
 
 This combines staged-versus-active comparison, replay readiness, and applicable SQL audits. It does
