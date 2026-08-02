@@ -83,13 +83,13 @@ upstream models. A trailing `+` is not supported for audits.
 
 ```bash
 DEPLOYMENT_ID="replace-with-deployment-id"
-stb audit backfill --deployment-id "$DEPLOYMENT_ID"
+stb audit deployment --deployment-id "$DEPLOYMENT_ID"
 ```
 
 This virtual-environment command resolves refs to deployment tables, combines data-quality results
 with replay readiness, and reports `ready`, `caution`, or `not_ready`.
 
-`audit backfill` does not accept `--select`. Error-severity failures recommend against publishing,
+`audit deployment` does not accept `--select`. Error-severity failures recommend against publishing,
 but StreamBuild does not enforce that recommendation as a publish lock. Warning-severity failures
 are included in the results without changing the assessment by themselves.
 

@@ -1,6 +1,6 @@
 ---
 title: "Virtual Environments"
-description: "Opt-in staged backfills, assessment, publishing, and lifecycle operations."
+description: "Opt-in staged builds, assessment, publishing, and lifecycle operations."
 ---
 
 Virtual environments preserve StreamBuild's versioned deployment workflow. Enable them for the
@@ -14,18 +14,18 @@ virtual_environments = true
 The lifecycle is:
 
 ```text
-plan -> backfill -> audit backfill -> publish
+plan -> build -> audit deployment -> publish
 ```
 
-## Backfill
+## Build
 
 ```bash
-stb backfill --auto-approve
-stb backfill --select orders --full-refresh --auto-approve
-stb backfill --select orders --start-time 2026-07-01T00:00:00Z --auto-approve
+stb build --auto-approve
+stb build --select orders --full-refresh --auto-approve
+stb build --select orders --start-time 2026-07-01T00:00:00Z --auto-approve
 ```
 
-Backfill creates deployment-specific model objects while the active stable views remain unchanged:
+Build creates deployment-specific model objects while the active stable views remain unchanged:
 
 ```text
 tbl__orders__20260729T120000Z_ab12cd
@@ -38,7 +38,7 @@ The deployment ID is generated as `YYYYMMDDTHHMMSSZ_<six-hex>` unless supplied w
 ## Assess staged data
 
 ```bash
-stb audit backfill --deployment-id 20260729T120000Z_ab12cd
+stb audit deployment --deployment-id 20260729T120000Z_ab12cd
 ```
 
 Assessment compares staged and active data, checks replay coverage, and runs applicable SQL audits.
@@ -62,7 +62,7 @@ bindings are switched one relation at a time and StreamBuild reports that capabi
 
 ## Candidate selection
 
-For `audit backfill` and `publish`, omitting `--deployment-id` works only when exactly one candidate
+For `audit deployment` and `publish`, omitting `--deployment-id` works only when exactly one candidate
 is available. Zero candidates is an error; multiple candidates produce explicit commands to choose
 from.
 

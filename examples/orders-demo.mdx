@@ -12,7 +12,7 @@ events:
 - Ten SQL models exercise transforms, filters, aggregates, and one reference-style join.
 
 <Note>
-  This example enables `[settings] virtual_environments = true` because it demonstrates backfill,
+  This example enables `[settings] virtual_environments = true` because it demonstrates staged build,
   staged audit, and publish. For the default direct workflow, follow the
   [quickstart](/quickstart).
 </Note>
@@ -121,7 +121,7 @@ stb test --project-dir examples/orders_demo
 The example covers model expectations, zero-row assertions, project macros, nested macro calls, and
 macro mode. Tests assemble their own CTE inputs, so they can run before the deployment graph exists.
 
-## Plan and backfill
+## Plan and build
 
 Preview the initial deployment:
 
@@ -133,7 +133,7 @@ Create deployment-specific tables, attach live ingestion, capture watermarks, an
 Kafka history:
 
 ```bash
-stb backfill --project-dir examples/orders_demo
+stb build --project-dir examples/orders_demo
 ```
 
 Review the displayed plan and approve it with `y`. The result prints the generated deployment ID
@@ -142,8 +142,8 @@ and the exact audit and publish follow-up commands.
 ## Audit the deployment
 
 ```bash
-DEPLOYMENT_ID="replace-with-id-from-backfill"
-stb audit backfill \
+DEPLOYMENT_ID="replace-with-id-from-build"
+stb audit deployment \
   --project-dir examples/orders_demo \
   --deployment-id "$DEPLOYMENT_ID"
 ```
@@ -157,7 +157,7 @@ result automatically.
 ## Publish
 
 ```bash
-DEPLOYMENT_ID="replace-with-id-from-backfill"
+DEPLOYMENT_ID="replace-with-id-from-build"
 stb publish \
   --project-dir examples/orders_demo \
   --deployment-id "$DEPLOYMENT_ID"

@@ -1,19 +1,27 @@
 ---
 title: "stb build"
-description: "Rebuild models directly and replay retained history."
+description: "Build selected pipelines directly or as an isolated deployment."
 ---
 
-`build` is the direct-mode write command.
+`build` plans and executes the selected pipeline in the mode declared by the effective project
+configuration. It is the only public build verb.
 
 ```bash
 stb build
 stb build --select orders
 stb build --auto-approve
 stb build --auto-approve --json
+stb build --deployment-id 20260701T120000Z_release202607
+stb build --select orders --full-refresh
+stb build --select orders --start-time 2026-07-01T00:00:00Z
 ```
 
-It preserves managed source objects, drops and recreates the selected model closure at ordinary
-`tbl__*` and `mv__*` names, and replays retained history through the rebuilt graph.
+In direct mode, StreamBuild preserves managed sources, drops and recreates the selected closure at
+ordinary `tbl__*` and `mv__*` names, and replays retained history through the rebuilt graph.
+
+With `[settings] virtual_environments = true`, the same command creates or safely resumes an
+unpublished deployment. Deployment-specific tables and materialized views are populated while
+stable published views remain unchanged. Use `stb audit deployment` and `stb publish` afterward.
 
 Before writing, StreamBuild displays the destructive plan and asks:
 
@@ -27,14 +35,47 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 | Option | Purpose |
 |---|---|
 | `--select VALUE` | Bare model or `pipeline:<name>`; repeatable |
+| `--deployment-id VALUE` | Fixed virtual deployment identity |
+| `--full-refresh` | Rebuild selected virtual roots from retained history |
+| `--start-time VALUE` | Bound selected virtual replay from a UTC timestamp |
 | `--auto-approve` | Skip confirmation |
 | `--json` | Structured result; requires auto approval |
 | `--verbose`, `-v` | Show complete schema diffs |
 
-The selected model or pipeline includes all downstream models. A full build runs every audit; a
-selected build runs audits whose complete model reference set is in execution scope.
+The selected model or pipeline includes all downstream models. `--deployment-id`, `--full-refresh`,
+and `--start-time` require virtual environments; direct mode rejects them before writing.
+
+## Exact workflow artifacts
+
+After confirmation and before the first mutation, StreamBuild atomically writes:
+
+```text
+target/run/build/
+├── plan.json
+├── workflow.sql
+└── steps/
+    ├── 0001_<step-id>.sql
+    └── ...
+```
+
+`plan.json` is the exact confirmed connected plan. Each numbered file is byte-identical to the SQL
+sent for that workflow step, and `workflow.sql` is those statements joined in order. The SQL embeds
+the fixed deployment identity and uses warehouse-owned ownership or watermark metadata for values
+captured during execution. It contains no Python callbacks or target-backed substitutions.
+
+These files are disposable transparency output. StreamBuild never reads `target/` as lifecycle
+state. A publication failure performs no warehouse mutation, and cancellation writes no build
+artifact.
+
+The numbered files or combined workflow can be run manually against the same confirmed warehouse
+state. Direct workflows are whole-workflow rerun-safe while preserved ownership and replay coverage
+still match. Virtual workflows may safely resume the same unpublished candidate and abort if it was
+published or conflicts with the confirmed preconditions.
+
+A full direct build runs every applicable audit; a selected direct build runs audits whose complete
+model reference set is in execution scope. Virtual deployment readiness is assessed separately.
 
 <Warning>
-  Builds do not roll back. A command failure may leave an incomplete direct graph; correct the cause
-  and rerun `stb build`.
+  Builds do not roll back. Correct the cause and rerun the same workflow only while its warehouse
+  preconditions still hold. Never treat a copied `target/` directory as recovery state.
 </Warning>
