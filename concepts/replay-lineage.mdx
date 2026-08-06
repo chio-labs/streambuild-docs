@@ -73,3 +73,7 @@ split, `bounded_replay_fallback` controls the result:
 a bounded replay from an explicit time. Virtual environments require active published roots and may
 seed pre-window history. Direct mode performs an unseeded destructive rebuild, preserves source
 relations unchanged, and intentionally omits pre-window derived output.
+
+Start-time boundaries are UTC instants, not warehouse-local wall times. Generated replay SQL uses
+explicit UTC `DateTime64` literals so server timezone and daylight-saving transitions cannot shift or
+collapse the requested boundary.

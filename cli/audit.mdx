@@ -1,6 +1,6 @@
 ---
 title: "stb audit"
-description: "Run data-quality audits against live or staged relations."
+description: "Run data-quality audits against current live relations."
 ---
 
 Run authored SQL audits against current relations:
@@ -18,26 +18,5 @@ not fail the command.
 Selectors support bare model names, `pipeline:<name>`, and optional leading `+` for upstream
 models. Multiple selectors are repeatable. Trailing `+` is not accepted by audit selection.
 
-## `stb audit deployment`
-
-Assess a staged virtual-environment deployment:
-
-```bash
-stb audit deployment
-DEPLOYMENT_ID="replace-with-deployment-id"
-stb audit deployment --deployment-id "$DEPLOYMENT_ID"
-stb audit deployment --deployment-id "$DEPLOYMENT_ID" --json
-```
-
-This combines staged-versus-active comparison, replay readiness, and applicable SQL audits. It does
-not accept `--select`. Warning-severity audit failures are reported but do not by themselves change
-the replay-readiness assessment.
-
-If the ID is omitted, one candidate is selected automatically. Zero or multiple candidates return
-an actionable error. A successful assessment command exits 0 even when the reported assessment is
-`not_ready`.
-
-<Warning>
-  Audit readiness is not an enforced publish prerequisite. Treat `not_ready` as an operator stop
-  signal.
-</Warning>
+Use [`stb deployment audit <deployment-id>`](/cli/deployment) to assess staged data before
+promotion. Live audit and deployment readiness are deliberately separate commands.

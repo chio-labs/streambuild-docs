@@ -21,7 +21,8 @@ ordinary `tbl__*` and `mv__*` names, and replays retained history through the re
 
 With `[settings] virtual_environments = true`, the same command creates or safely resumes an
 unpublished deployment. Deployment-specific tables and materialized views are populated while
-stable published views remain unchanged. Use `stb audit deployment` and `stb publish` afterward.
+stable published views remain unchanged. Use `stb deployment audit <deployment-id>` and
+`stb deployment promote <deployment-id>` afterward.
 
 StreamBuild inspects current warehouse state and assembles the complete workflow before displaying
 the destructive plan and asking:
@@ -46,6 +47,11 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 The selected model or pipeline includes all downstream models. `--deployment-id` and
 `--full-refresh` require virtual environments. `--start-time` works in both modes, requires at least
 one selector, and cannot be combined with `--full-refresh`.
+
+Start times are UTC instants. StreamBuild preserves that UTC value in `plan.json` and renders replay
+predicates with an explicit UTC timezone, regardless of the ClickHouse server timezone. This keeps
+winter and summer offsets correct and distinguishes both occurrences of a repeated hour during a
+daylight-saving fall-back transition.
 
 In direct mode, `--start-time` is an unseeded bounded rebuild. StreamBuild preserves source
 definitions and rows, drops and recreates the selected closure at ordinary names, and omits derived

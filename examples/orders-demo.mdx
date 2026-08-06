@@ -137,30 +137,34 @@ stb build --project-dir examples/orders_demo
 ```
 
 Review the displayed plan and approve it with `y`. The result prints the generated deployment ID
-and the exact audit and publish follow-up commands.
+and the exact audit and promotion follow-up commands.
+
+List or inspect deployment evidence at any time:
+
+```bash
+DEPLOYMENT_ID="replace-with-id-from-build"
+stb deployment list --project-dir examples/orders_demo
+stb deployment show "$DEPLOYMENT_ID" --project-dir examples/orders_demo
+```
 
 ## Audit the deployment
 
 ```bash
-DEPLOYMENT_ID="replace-with-id-from-build"
-stb audit deployment \
-  --project-dir examples/orders_demo \
-  --deployment-id "$DEPLOYMENT_ID"
+stb deployment audit "$DEPLOYMENT_ID" \
+  --project-dir examples/orders_demo
 ```
 
 The assessment combines replay readiness with singular and generic SQL audits. The example checks
 status values, NULL identifiers, line totals, future events, and aggregate invariants.
 
-Stop and investigate if the assessment is `not_ready`; publish does not enforce that advisory
+Stop and investigate if the assessment is `not_ready`; promotion does not enforce that advisory
 result automatically.
 
-## Publish
+## Promote
 
 ```bash
-DEPLOYMENT_ID="replace-with-id-from-build"
-stb publish \
-  --project-dir examples/orders_demo \
-  --deployment-id "$DEPLOYMENT_ID"
+stb deployment promote "$DEPLOYMENT_ID" \
+  --project-dir examples/orders_demo
 ```
 
 Stable `tbl__*` views now point to the selected deployment tables. Query one through ClickHouse:
@@ -174,7 +178,7 @@ docker compose -f examples/orders_demo/docker/compose.yml exec clickhouse \
   --query "SELECT status, count() FROM tbl__orders GROUP BY status ORDER BY status"
 ```
 
-Run live audits after publish when you want a post-publish check:
+Run live audits after promotion when you want a post-promotion check:
 
 ```bash
 stb audit --project-dir examples/orders_demo
