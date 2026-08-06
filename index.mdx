@@ -11,7 +11,7 @@ It supports two operational workflows:
 - **Direct mode** is the default. `stb build` rebuilds selected models at their ordinary names and
   replays retained history without a publish step.
 - **Virtual environments** are an explicit opt-in. `stb build` creates deployment-specific tables,
-  `stb audit deployment` assesses them, and `stb publish` switches stable views.
+  `stb deployment audit` assesses them, and `stb deployment promote` switches stable views.
 
 ## What StreamBuild manages
 
@@ -36,7 +36,7 @@ seeds, UDF management, or a generic multi-warehouse abstraction.
     Understand destructive rebuilds, replay, failure, and rerun behavior.
   </Card>
   <Card title="Virtual environments" icon="code-branch" href="/concepts/deployments">
-    Stage, assess, publish, diagnose, and clean versioned deployments.
+    Stage, inspect, assess, promote, diagnose, and clean versioned deployments.
   </Card>
   <Card title="Orders demo" icon="cart-shopping" href="/examples/orders-demo">
     Run the checked-in Kafka and virtual-environment example.

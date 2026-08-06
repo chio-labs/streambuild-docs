@@ -68,6 +68,10 @@ adopted source definitions and rows are not replaced, truncated, or deleted. Der
 the effective lower frontier are intentionally absent after success, and ownership records retain
 only the bounded coverage that was actually reconstructed.
 
+`--start-time` is interpreted as UTC and remains an explicit UTC instant through planning and
+execution. A non-UTC ClickHouse server does not shift the boundary, including across daylight-saving
+transitions where local wall-clock hours may be skipped or repeated.
+
 Every replay input in the selected closure must already exist and expose its configured timestamp
 or landed-at lineage. Run an ordinary direct build first to create a managed source. If an
 intermediate model becomes a replay input, project time lineage through that model before requesting
@@ -80,7 +84,7 @@ tbl__orders
 mv__orders
 ```
 
-There are no deployment-specific model branches, stable logical views, or publish command.
+There are no deployment-specific model branches, stable logical views, or deployment promotion.
 
 ## Delivery guarantee
 

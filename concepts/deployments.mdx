@@ -1,6 +1,6 @@
 ---
 title: "Virtual Environments"
-description: "Opt-in staged builds, assessment, publishing, and lifecycle operations."
+description: "Opt-in staged builds, inventory, assessment, promotion, and lifecycle operations."
 ---
 
 Virtual environments preserve StreamBuild's versioned deployment workflow. Enable them for the
@@ -14,7 +14,7 @@ virtual_environments = true
 The lifecycle is:
 
 ```text
-plan -> build -> audit deployment -> publish
+plan -> build -> deployment list/show -> deployment audit -> deployment promote
 ```
 
 ## Build
@@ -35,10 +35,23 @@ mv__orders__20260729T120000Z_ab12cd
 The deployment ID is generated as `YYYYMMDDTHHMMSSZ_<six-hex>` unless supplied with
 `--deployment-id`.
 
+## Discover and inspect
+
+Build prints the generated ID. You can also reconstruct inventory from authoritative warehouse
+evidence:
+
+```bash
+stb deployment list
+stb deployment show 20260729T120000Z_ab12cd
+```
+
+Inventory distinguishes active, staged, superseded, incomplete, metadata-missing, and
+physical-missing deployments. List and show are read-only.
+
 ## Assess staged data
 
 ```bash
-stb audit deployment --deployment-id 20260729T120000Z_ab12cd
+stb deployment audit 20260729T120000Z_ab12cd
 ```
 
 Assessment compares staged and active data, checks replay coverage, and runs applicable SQL audits.
@@ -46,25 +59,22 @@ Error-severity quality failures produce a `not_ready` assessment. Warning-severi
 in the audit results but do not by themselves change the replay-readiness assessment.
 
 <Warning>
-  Assessment is an operator safety step, not an enforced publish lock. `stb publish` does not
+  Assessment is an operator safety step, not an enforced promotion lock. `deployment promote` does not
   require a previously persisted ready result.
 </Warning>
 
-## Publish
+## Promote
 
 ```bash
-stb publish --deployment-id 20260729T120000Z_ab12cd
+stb deployment promote 20260729T120000Z_ab12cd
 ```
 
-Publish creates or replaces stable views such as `tbl__orders` to read from the selected deployment
+Promotion creates or replaces stable views such as `tbl__orders` to read from the selected deployment
 table. ClickHouse replaces each relation atomically, but the complete graph is **not graph-atomic**:
 bindings are switched one relation at a time and StreamBuild reports that capability in output.
 
-## Candidate selection
-
-For `audit deployment` and `publish`, omitting `--deployment-id` works only when exactly one candidate
-is available. Zero candidates is an error; multiple candidates produce explicit commands to choose
-from.
+Show, audit, and promote require explicit positional IDs. There is no automatic sole-candidate or
+latest-candidate selection.
 
 ## Operational commands
 

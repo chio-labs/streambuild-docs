@@ -45,7 +45,7 @@
           "cli/plan",
           "cli/build",
           "cli/audit",
-          "cli/publish",
+          "cli/deployment",
           "cli/test",
           "cli/doctor",
           "cli/repair",

@@ -1,0 +1,48 @@
+---
+title: "stb deployment"
+description: "Discover, inspect, audit, and promote virtual deployments."
+---
+
+The deployment command family uses explicit resource operations:
+
+```bash
+DEPLOYMENT_ID="replace-with-deployment-id"
+stb deployment list
+stb deployment show "$DEPLOYMENT_ID"
+stb deployment audit "$DEPLOYMENT_ID"
+stb deployment promote "$DEPLOYMENT_ID"
+```
+
+All four commands accept project, target, connection, and `--json` options. Virtual environments
+must be enabled.
+
+## List and show
+
+`deployment list` reconstructs authoritative inventory from append-only lifecycle metadata and live
+ClickHouse catalog evidence. Deployments are reported as `active`, `staged`, `superseded`,
+`incomplete`, `metadata_missing`, or `physical_missing`.
+
+`deployment show <deployment-id>` displays one deployment's persisted status, roots, physical
+relations, missing relations, active bindings, and latest publication time. Both operations are
+read-only.
+
+## Audit
+
+`deployment audit <deployment-id>` combines staged-versus-active comparison, replay readiness, and
+applicable SQL audits. It does not accept `--select`. A successful command exits 0 even when the
+reported assessment is `not_ready`.
+
+<Warning>
+  Readiness is an operator safety signal, not an enforced promotion lock. Treat `not_ready` as a
+  reason to stop and investigate.
+</Warning>
+
+## Promote
+
+`deployment promote <deployment-id>` atomically replaces each stable `tbl__*` view so it points to
+the selected deployment table. The complete graph is not switched in one transaction; bindings are
+replaced one relation at a time and the command reports adapter atomicity.
+
+Show, audit, and promote always require a positional deployment ID. StreamBuild never selects a sole
+or latest candidate implicitly. Use `deployment list` to discover generated IDs. Older deployment
+objects remain available for diagnosis, repair, and top-level `stb janitor` cleanup.
