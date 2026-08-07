@@ -65,8 +65,7 @@ One build:
 With `--start-time`, the lifecycle stays destructive and unseeded: StreamBuild drops and recreates
 the same selected closure, then replays only the lower-and-upper-bounded source window. Managed and
 adopted source definitions and rows are not replaced, truncated, or deleted. Derived rows before
-the effective lower frontier are intentionally absent after success, and ownership records retain
-only the bounded coverage that was actually reconstructed.
+the effective lower frontier are intentionally absent after success.
 
 `--start-time` is interpreted as UTC and remains an explicit UTC instant through planning and
 execution. A non-UTC ClickHouse server does not shift the boundary, including across daylight-saving
@@ -98,16 +97,23 @@ contribution would be incorrect.
 ## Failure and rerun
 
 Direct builds are destructive and do not roll back. If a build fails after teardown, rerun
-`stb build` after correcting the cause. StreamBuild persists required replay coverage and refuses
-to silently use a shorter history window when source retention no longer covers it.
-
-A bounded build writes its clipped ownership coverage before teardown. Retrying the same start time
-therefore preserves the same lower frontier, while a fresh upper boundary can include newly arrived
-rows. A later start time intentionally narrows the protected window; an earlier start can widen it
-only while the source still retains the requested history.
+`stb build` after correcting the cause. Recovery is always a new invocation, never a resumed
+workflow. Each invocation inspects the live catalog and retained input again. A repeated
+`--start-time` request keeps the requested lower boundary but captures a fresh upper boundary; its
+preflight fails if the source no longer retains the requested window.
 
 An error-severity audit makes the command fail after the new resources are live; it does not revert
 the rebuild.
+
+## Authority and SQL baselines
+
+Project declarations, the live ClickHouse catalog, and live source and target data are authoritative
+in direct mode. Replay boundaries are captured in process memory for the current build; StreamBuild
+does not use a direct-mode checkpoint or ownership table.
+
+`_streambuild_direct_fingerprints` is optional, best-effort history of successfully applied model
+SQL. It enables query diffs in later plans but never decides what exists, what should execute, or
+which replay range is safe. Missing or inaccessible fingerprint metadata does not block a build.
 
 ## Mode ownership
 

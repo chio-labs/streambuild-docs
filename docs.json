@@ -44,6 +44,7 @@
           "cli/compile",
           "cli/plan",
           "cli/build",
+          "cli/dev",
           "cli/audit",
           "cli/deployment",
           "cli/test",

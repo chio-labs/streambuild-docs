@@ -87,19 +87,35 @@ The user-owned `orders_existing` table feeds `mv__orders_enriched`, which writes
 
 ## Metadata tables
 
-StreamBuild stores state in the selected target database:
+StreamBuild stores metadata in the selected target database. Virtual-environment lifecycle state is
+authoritative:
 
 ```text
-streambuild_object_state_snapshots
-streambuild_deployments
-streambuild_deployment_watermarks
-streambuild_deployment_runtime_details
-streambuild_publish_history
-streambuild_state_schema_versions
-streambuild_target_ownership
+_streambuild_schema_versions
+_streambuild_virtual_deployments
+_streambuild_virtual_object_state
+_streambuild_virtual_replay_boundaries
+_streambuild_virtual_publications
 ```
 
-These are internal contracts. Do not edit them manually.
+Direct mode instead treats project declarations, the live catalog, and live data as authoritative.
+Its only mode-specific metadata is the optional `_streambuild_direct_fingerprints` SQL-diff history.
+
+Execution observability uses three append-only tables:
+
+```text
+_streambuild_invocations
+_streambuild_node_results
+_streambuild_run_events
+```
+
+Invocations record terminal command outcomes, node results record test and audit evidence, and run
+events record build and statement progress. Builds emit a heartbeat every 10 seconds. The dev UI
+derives `running`, `unresponsive` after 45 seconds, and `presumed_failed` after 10 minutes from the
+latest durable signal; those non-terminal states can reverse when a later event arrives.
+
+Observability rows never influence planning, replay, publication, repair, reconcile, or cleanup.
+All metadata tables are internal contracts; do not edit them manually.
 
 ## Compile boundary
 

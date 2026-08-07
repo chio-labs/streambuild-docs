@@ -5,7 +5,7 @@ description: "Preview direct rebuilds or virtual-environment deployments without
 
 Compare the compiled project with ClickHouse and print a read-only warehouse plan. A successful
 command assembles the complete workflow that a build would execute against the same observed state,
-then atomically publishes its JSON and exact SQL without mutating ClickHouse.
+then atomically publishes its JSON and SQL visibility artifacts without mutating ClickHouse.
 
 ```bash
 stb plan
@@ -49,9 +49,9 @@ Both require `--select` and are mutually exclusive.
 
 `--full-refresh` applies only to virtual environments. `--start-time` applies to both modes. In
 direct mode it shows the effective start time in plan text and the nullable top-level `start_time`
-field in plan JSON, and the exact workflow SQL includes every lower frontier used for preflight,
-coverage capture, and replay. Direct replay inputs must already exist and expose timestamp or
-landed-at lineage through the selected closure.
+field in plan JSON. The direct SQL template shows the capture, preflight, and replay structure; values
+captured from ClickHouse during execution remain placeholders. Direct replay inputs must already
+exist and expose timestamp or landed-at lineage through the selected closure.
 
 ## Common options
 
@@ -59,28 +59,32 @@ Connecting commands accept `--host`, `--port`, `--username`, `--password`, `--da
 `--target`, `--vars`, and `--project-dir`. `--json` emits structured output and `--verbose` (`-v`)
 includes full schema diffs.
 
-## Exact workflow artifacts
+## Workflow artifacts
 
-After read-only connected inspection, StreamBuild atomically replaces the complete directory:
+After read-only connected inspection, StreamBuild atomically replaces the complete plan directory.
+Direct mode publishes a non-executable template because replay watermarks and other runtime captures
+do not exist yet:
 
 ```text
 target/run/plan/
 ├── plan.json
-├── workflow.sql
+├── workflow.template.sql
 └── steps/
-    ├── 0001_<step-id>.sql
+    ├── 0001_<step-id>.sql.template
     └── ...
 ```
 
-The bytes printed by `stb plan --json` are exactly the bytes stored in `plan.json`; text mode writes
-the same JSON through the same serializer. Each numbered file is byte-identical to its workflow
-statement, and `workflow.sql` is those statements joined in order.
+Virtual-environment plans have all physical identities and SQL values available during planning, so
+they publish exact `workflow.sql` and `steps/*.sql` files instead.
 
-Plan and build use the same connected preparation, workflow assemblers, ordering validation, and
-artifact serializer. They remain independent invocations: `stb build` inspects current warehouse
-state again and never reads, compares, promotes, or executes `target/run/plan/`. Warehouse changes
-between commands can therefore produce a different build workflow; build preflight assertions
-protect the state observed during its own preparation.
+The bytes printed by `stb plan --json` are exactly the bytes stored in `plan.json`; text mode writes
+the same JSON through the same serializer. In either layout, the combined workflow joins the
+numbered statements in execution order.
+
+Plan and build use the same connected preparation and ordering rules. They remain independent
+invocations: `stb build` inspects current warehouse state again and never reads, compares, promotes,
+or executes `target/run/plan/`. Warehouse changes between commands can therefore produce a different
+build workflow; build preflight assertions protect the state observed during its own preparation.
 
 All `target/run/` files are disposable visibility output, not local state. Failed compilation,
 connected inspection, workflow assembly, or publication leaves any previous complete plan artifact

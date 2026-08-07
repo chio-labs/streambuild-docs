@@ -11,6 +11,7 @@ stb build
 stb build --select orders
 stb build --auto-approve
 stb build --auto-approve --json
+stb build --auto-approve --events
 stb build --deployment-id 20260701T120000Z_release202607
 stb build --select orders --full-refresh
 stb build --select orders --start-time 2026-07-01T00:00:00Z
@@ -19,10 +20,10 @@ stb build --select orders --start-time 2026-07-01T00:00:00Z
 In direct mode, StreamBuild preserves managed sources, drops and recreates the selected closure at
 ordinary `tbl__*` and `mv__*` names, and replays retained history through the rebuilt graph.
 
-With `[settings] virtual_environments = true`, the same command creates or safely resumes an
-unpublished deployment. Deployment-specific tables and materialized views are populated while
-stable published views remain unchanged. Use `stb deployment audit <deployment-id>` and
-`stb deployment promote <deployment-id>` afterward.
+With `[settings] virtual_environments = true`, the same command creates an unpublished deployment.
+Deployment-specific tables and materialized views are populated while stable published views remain
+unchanged. Use `stb deployment audit <deployment-id>` and `stb deployment promote <deployment-id>`
+afterward.
 
 StreamBuild inspects current warehouse state and assembles the complete workflow before displaying
 the destructive plan and asking:
@@ -42,6 +43,7 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 | `--start-time VALUE` | Bound selected direct or virtual replay from a UTC timestamp |
 | `--auto-approve` | Skip confirmation |
 | `--json` | Structured result; requires auto approval |
+| `--events` | Stream JSONL progress events; requires auto approval |
 | `--verbose`, `-v` | Show complete schema diffs |
 
 The selected model or pipeline includes all downstream models. `--deployment-id` and
@@ -64,40 +66,40 @@ intermediate model used as a replay input.
 
 ## Exact workflow artifacts
 
-After confirmation and before the first mutation, StreamBuild atomically writes:
+Build visibility artifacts use this layout:
 
 ```text
 target/run/build/
 ├── plan.json
 ├── workflow.sql
+├── execution.json       # direct mode
 └── steps/
     ├── 0001_<step-id>.sql
     └── ...
 ```
 
-`plan.json` is the exact confirmed connected plan. Each numbered file is byte-identical to the SQL
-sent for that workflow step, and `workflow.sql` is those statements joined in order. The SQL embeds
-the fixed deployment identity and uses warehouse-owned ownership or watermark metadata for values
-captured during execution. It contains no Python callbacks or target-backed substitutions.
+`plan.json` is the confirmed connected plan. Each numbered file is byte-identical to the resolved SQL
+for that step, and `workflow.sql` joins the statements in order. Virtual workflows are complete at
+confirmation and are published before the first mutation. Direct workflows resolve captured
+watermarks during execution, then publish the exact resolved SQL and `execution.json` on success or
+a handled failure.
 
 These files are disposable transparency output. StreamBuild never reads `target/` as lifecycle
-state. A publication failure performs no warehouse mutation, and cancellation writes no build
-artifact.
+state. A copied artifact is not recovery state.
 
 `stb plan` uses the same workflow preparation and serialization path under `target/run/plan/`, but
 build never reads or compares that directory. Every build independently inspects current warehouse
-state, assembles its workflow, confirms it, publishes it under `target/run/build/`, and executes that
-same in-memory workflow object.
+state, assembles and confirms a fresh in-memory workflow, executes it, and records artifacts according
+to the mode-specific timing above.
 
-The numbered files or combined workflow can be run manually against the same confirmed warehouse
-state. Direct workflows are whole-workflow rerun-safe while preserved ownership and replay coverage
-still match. Virtual workflows may safely resume the same unpublished candidate and abort if it was
-published or conflicts with the confirmed preconditions.
+Builds do not resume a prior workflow. After cancellation or failure, correct the cause and run
+`stb build` again so StreamBuild can inspect current warehouse state, assemble a fresh workflow, and
+apply current preconditions. Direct and virtual builds do not roll back mutations already completed.
 
 A full direct build runs every applicable audit; a selected direct build runs audits whose complete
 model reference set is in execution scope. Virtual deployment readiness is assessed separately.
 
 <Warning>
-  Builds do not roll back. Correct the cause and rerun the same workflow only while its warehouse
-  preconditions still hold. Never treat a copied `target/` directory as recovery state.
+  Do not execute copied workflow SQL as a recovery procedure. Rerun the StreamBuild command so it can
+  plan against current warehouse state.
 </Warning>
