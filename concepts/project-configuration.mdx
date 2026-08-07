@@ -23,7 +23,9 @@ password = "${ENV:CLICKHOUSE_PASSWORD}"
 environment_name = "dev"
 
 [defaults]
+kafka_broker_list = "${ENV:KAFKA_BROKERS}"
 managed_source_ttl = "_replay_landed_at + INTERVAL 14 DAY"
+model_ttl = "event_at + INTERVAL 90 DAY"
 
 [naming]
 table_prefix = "tbl__"
@@ -45,7 +47,17 @@ Commands that connect to ClickHouse require `host`, `port`, `username`, and `pas
 configuration layers are merged. StreamBuild supplies no connection defaults. Use `password = ""`
 when the ClickHouse account intentionally has an empty password.
 
-## Managed source retention
+## Kafka and retention defaults
+
+Set a broker list once for every managed Kafka source in the project:
+
+```toml
+[defaults]
+kafka_broker_list = "${ENV:KAFKA_BROKERS}"
+```
+
+A source-level `broker_list` overrides this value. A managed Kafka source must resolve a broker list
+from one of those levels. The default supports normal project and environment interpolation.
 
 Set an optional project-wide TTL for StreamBuild-managed Kafka landing tables:
 
@@ -58,6 +70,18 @@ The value is a ClickHouse TTL expression. `_replay_landed_at` is the recommended
 tracks when StreamBuild persisted the Kafka record, independently of the event timestamp. A managed
 source can override this default with its own `ttl`. When neither level defines a value, StreamBuild
 does not add a TTL clause and retains landing data indefinitely.
+
+Set an independent default for table models:
+
+```toml
+[defaults]
+model_ttl = "event_at + INTERVAL 90 DAY"
+```
+
+An explicit `ttl` in `MODEL()` overrides `model_ttl`. When neither level defines a model TTL,
+StreamBuild creates the table without a TTL clause. The effective TTL is validated against output
+columns and participates in storage identity and drift detection. Terminal views do not inherit a
+model TTL.
 
 ## Model relation naming
 

@@ -77,6 +77,10 @@ continuing. The producer writes to `source.order_events.live`. Local endpoints a
 The checked-in project target connects as `clickhouse` / `clickhouse` and uses the `orders_demo`
 database.
 
+The checked-in `[defaults].kafka_broker_list = "redpanda:9092"` supplies the broker for
+`sources/order_events.yml`, so the reusable source declaration only needs its topic and replay
+boundary.
+
 ## Inspect the graph
 
 ```bash

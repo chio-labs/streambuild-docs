@@ -12,6 +12,7 @@ stb build --select orders
 stb build --auto-approve
 stb build --auto-approve --json
 stb build --auto-approve --events
+stb build --select pipeline:orders --auto-approve --confirm DEPLOY_ORDERS
 stb build --deployment-id 20260701T120000Z_release202607
 stb build --select orders --full-refresh
 stb build --select orders --start-time 2026-07-01T00:00:00Z
@@ -42,6 +43,7 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 | `--full-refresh` | Rebuild selected virtual roots from retained history |
 | `--start-time VALUE` | Bound selected direct or virtual replay from a UTC timestamp |
 | `--auto-approve` | Skip confirmation |
+| `--confirm VALUE` | Supply one exact protected-pipeline confirmation; repeatable |
 | `--json` | Structured result; requires auto approval |
 | `--events` | Stream JSONL progress events; requires auto approval |
 | `--verbose`, `-v` | Show complete schema diffs |
@@ -49,6 +51,19 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 The selected model or pipeline includes all downstream models. `--deployment-id` and
 `--full-refresh` require virtual environments. `--start-time` works in both modes, requires at least
 one selector, and cannot be combined with `--full-refresh`.
+
+## Protected pipelines
+
+A pipeline with `[protection]` in `pipeline.toml` adds a separate confirmation gate. Every protected
+pipeline reached by the resolved build closure requires its exact configured value:
+
+```bash
+stb build --select pipeline:orders --auto-approve --confirm DEPLOY_ORDERS
+```
+
+`--auto-approve` skips only the ordinary plan prompt. It does not bypass pipeline protection,
+including with `--json` or `--events`. Repeat `--confirm` when one invocation reaches multiple
+protected pipelines.
 
 Start times are UTC instants. StreamBuild preserves that UTC value in `plan.json` and renders replay
 predicates with an explicit UTC timezone, regardless of the ClickHouse server timezone. This keeps
