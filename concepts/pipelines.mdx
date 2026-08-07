@@ -137,6 +137,8 @@ confirmation = "DEPLOY_ORDERS"
 
 Both fields are optional. The warning defaults to a generic protected-pipeline message and the
 confirmation defaults to the pipeline name, so an empty `[protection]` block is valid.
+Confirmation values are shell-safe tokens: they must start with a letter or number and may contain
+only letters, numbers, `.`, `_`, `:`, and `-`.
 
 When a direct or virtual build closure contains a protected pipeline, StreamBuild requires its exact
 confirmation value. This is independent of ordinary plan approval: `--auto-approve`, `--json`, and
