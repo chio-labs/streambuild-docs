@@ -1,0 +1,50 @@
+---
+title: "stb dev"
+description: "Serve the local StreamBuild UI for one project and target."
+---
+
+Compile a project, connect to its selected ClickHouse target, and serve the packaged web UI and JSON
+API until interrupted:
+
+```bash
+stb dev
+stb dev --project-dir examples/orders_demo
+stb dev --ui-host 127.0.0.1 --ui-port 8000
+```
+
+Open `http://127.0.0.1:8000` by default. `stb dev` accepts the normal project, target, variables, and
+ClickHouse connection overrides in addition to:
+
+| Option | Purpose |
+|---|---|
+| `--ui-host VALUE` | Bind interface; defaults to `127.0.0.1` |
+| `--ui-port VALUE` | Bind port; defaults to `8000` |
+
+The UI combines authored definitions with live warehouse state. Use it to inspect ingestion,
+freshness, lineage, pipelines, sources, catalog relations, deployment state, quality results, and
+durable run history. For direct-mode projects, the Plan view previews destructive downstream
+closures and can launch the same `stb build --auto-approve --events` execution path with the resolved
+project context.
+
+<Frame>
+  <img src="/images/ui/plan-dark.png" alt="Direct rebuild plan in the StreamBuild development UI" />
+</Frame>
+
+## Runs and cancellation
+
+Builds emit durable statement events and a heartbeat every 10 seconds. Runs without a terminal fact
+appear as `running`, then `unresponsive` after 45 seconds without a signal, and `presumed failed`
+after 10 minutes. These are derived display states, not persisted outcomes, and can reverse when a
+later heartbeat or terminal event arrives.
+
+<Frame>
+  <img src="/images/ui/runs-dark.png" alt="StreamBuild run history with success, failure, and cancelled outcomes" />
+</Frame>
+
+The dev server can gracefully cancel only the build child process it launched. If graceful
+cancellation does not finish, the UI can force-stop that owned child. Builds started in another
+terminal and orphaned runs remain visible but cannot be signalled by the current server. Recovery is
+always a fresh `stb build` invocation, never resume.
+
+`stb dev` is a local development surface, not a multi-user control plane. Keep the default loopback
+binding unless you intentionally provide network access controls.

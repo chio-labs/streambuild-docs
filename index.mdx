@@ -6,6 +6,10 @@ description: "Declarative streaming data pipelines for ClickHouse."
 StreamBuild compiles typed SQL models into ClickHouse tables and materialized views, plans their
 dependencies, and rebuilds them from retained streaming history.
 
+<Frame>
+  <img src="/images/ui/overview-dark.png" alt="StreamBuild project overview showing ingestion, freshness, and quality" />
+</Frame>
+
 It supports two operational workflows:
 
 - **Direct mode** is the default. `stb build` rebuilds selected models at their ordinary names and
@@ -39,7 +43,7 @@ seeds, UDF management, or a generic multi-warehouse abstraction.
     Stage, inspect, assess, promote, diagnose, and clean versioned deployments.
   </Card>
   <Card title="Orders demo" icon="cart-shopping" href="/examples/orders-demo">
-    Run the checked-in Kafka and virtual-environment example.
+    Run the checked-in Kafka-to-ClickHouse direct-mode example.
   </Card>
 </CardGroup>
 

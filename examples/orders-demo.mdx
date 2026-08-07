@@ -1,20 +1,18 @@
 ---
 title: "Orders Demo"
-description: "Run a ten-model Kafka-to-ClickHouse project with tests, audits, replay, and publish."
+description: "Run a ten-model Kafka-to-ClickHouse project with tests, audits, replay, and the dev UI."
 ---
 
-The repository includes a runnable virtual-environment project driven by synthetic e-commerce
-events:
+The repository includes a runnable direct-mode project driven by synthetic e-commerce events:
 
 - Redpanda provides Kafka-compatible ingestion.
 - A local producer emits order lifecycle events.
-- ClickHouse stores managed sources, deployment tables, and stable views.
+- ClickHouse stores managed source history and direct model tables.
 - Ten SQL models exercise transforms, filters, aggregates, and one reference-style join.
 
 <Note>
-  This example enables `[settings] virtual_environments = true` because it demonstrates staged build,
-  staged audit, and publish. For the default direct workflow, follow the
-  [quickstart](/quickstart).
+  The checked-in configuration explicitly sets `[settings] virtual_environments = false`. Builds
+  therefore replace ordinary `tbl__*` and `mv__*` relations without a deployment or promotion step.
 </Note>
 
 ## Prerequisites
@@ -112,6 +110,10 @@ inputs instead of projecting post-aggregate lineage.
 `hourly_order_volume`; and `region_lookup` is a side reference for `enriched_orders`.
 `order_cancellations` feeds `daily_cancellation_rates`.
 
+<Frame>
+  <img src="/images/ui/lineage-dark.png" alt="Logical lineage graph for the orders demo" />
+</Frame>
+
 ## Run SQL tests
 
 ```bash
@@ -119,55 +121,27 @@ stb test --project-dir examples/orders_demo
 ```
 
 The example covers model expectations, zero-row assertions, project macros, nested macro calls, and
-macro mode. Tests assemble their own CTE inputs, so they can run before the deployment graph exists.
+macro mode. Tests assemble their own CTE inputs, so they can run before the warehouse model graph
+exists.
 
 ## Plan and build
 
-Preview the initial deployment:
+Preview the direct rebuild:
 
 ```bash
 stb plan --project-dir examples/orders_demo
 ```
 
-Create deployment-specific tables, attach live ingestion, capture watermarks, and replay retained
-Kafka history:
+Preserve the managed Kafka landing source, recreate all ten model tables and materialized views, and
+replay retained Kafka history:
 
 ```bash
 stb build --project-dir examples/orders_demo
 ```
 
-Review the displayed plan and approve it with `y`. The result prints the generated deployment ID
-and the exact audit and promotion follow-up commands.
-
-List or inspect deployment evidence at any time:
-
-```bash
-DEPLOYMENT_ID="replace-with-id-from-build"
-stb deployment list --project-dir examples/orders_demo
-stb deployment show "$DEPLOYMENT_ID" --project-dir examples/orders_demo
-```
-
-## Audit the deployment
-
-```bash
-stb deployment audit "$DEPLOYMENT_ID" \
-  --project-dir examples/orders_demo
-```
-
-The assessment combines replay readiness with singular and generic SQL audits. The example checks
-status values, NULL identifiers, line totals, future events, and aggregate invariants.
-
-Stop and investigate if the assessment is `not_ready`; promotion does not enforce that advisory
-result automatically.
-
-## Promote
-
-```bash
-stb deployment promote "$DEPLOYMENT_ID" \
-  --project-dir examples/orders_demo
-```
-
-Stable `tbl__*` views now point to the selected deployment tables. Query one through ClickHouse:
+Review the displayed plan and approve it with `y`. The result reports the rebuilt relations and
+applicable audit results. The example checks status values, NULL identifiers, line totals, future
+events, and aggregate invariants. Query a direct table through ClickHouse:
 
 ```bash
 docker compose -f examples/orders_demo/docker/compose.yml exec clickhouse \
@@ -178,11 +152,21 @@ docker compose -f examples/orders_demo/docker/compose.yml exec clickhouse \
   --query "SELECT status, count() FROM tbl__orders GROUP BY status ORDER BY status"
 ```
 
-Run live audits after promotion when you want a post-promotion check:
+Run live audits later without rebuilding:
 
 ```bash
 stb audit --project-dir examples/orders_demo
 ```
+
+## Explore the UI
+
+```bash
+stb dev --project-dir examples/orders_demo
+```
+
+Open `http://127.0.0.1:8000` to inspect live ingestion, lineage, model definitions, quality results,
+destructive rebuild plans, and run history. See [`stb dev`](/cli/dev) for execution and cancellation
+behavior.
 
 ## Clean up
 
