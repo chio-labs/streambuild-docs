@@ -63,7 +63,8 @@ stb build --select pipeline:orders --auto-approve --confirm DEPLOY_ORDERS
 
 `--auto-approve` skips only the ordinary plan prompt. It does not bypass pipeline protection,
 including with `--json` or `--events`. Repeat `--confirm` when one invocation reaches multiple
-protected pipelines.
+protected pipelines. Confirmation values are single shell-safe tokens containing letters, numbers,
+`.`, `_`, `:`, or `-`.
 
 Start times are UTC instants. StreamBuild preserves that UTC value in `plan.json` and renders replay
 predicates with an explicit UTC timezone, regardless of the ClickHouse server timezone. This keeps
