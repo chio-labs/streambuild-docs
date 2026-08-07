@@ -20,11 +20,17 @@ Only direct `sources/*.yml` files are discovered. Source names must be unique ac
 
 ## Managed Kafka source
 
+Projects with multiple Kafka sources can set their shared broker once:
+
+```toml
+[defaults]
+kafka_broker_list = "redpanda:9092"
+```
+
 ```yaml
 sources:
   - name: order_events
     kind: kafka
-    broker_list: redpanda:9092
     topic: source.order_events.live
     consumer_group: optional_group
     format: JSONAsString
@@ -46,6 +52,10 @@ mv__order_events      landing materialized view
 Managed sources support `offsets`, `timestamp`, and `landed_at`. `JSONAsString` is currently the
 only supported Kafka format. StreamBuild owns these source objects and blocks incompatible source
 drift rather than silently recreating them.
+
+`broker_list` may be declared on the source or inherited from `[defaults].kafka_broker_list` in
+`streambuild_project.toml`. A source-level value takes precedence. One of the two is required for
+every managed Kafka source.
 
 `ttl` is an optional ClickHouse expression applied to the managed `raw__order_events` landing
 table. It overrides `[defaults].managed_source_ttl` from `streambuild_project.toml`. Use
@@ -114,3 +124,21 @@ view_prefix = "reporting__"
 These policy fields are invalid in direct mode because direct builds always rebuild their selected
 closure. Naming overrides work in both modes and may partially override project `[naming]` values.
 Pipelines that need no pipeline-wide override omit `pipeline.toml` entirely.
+
+## Protected pipelines
+
+Add a protection gate when replacing a pipeline has operational impact:
+
+```toml
+[protection]
+warning = "Interrupts the protected order feed while objects are replaced."
+confirmation = "DEPLOY_ORDERS"
+```
+
+Both fields are optional. The warning defaults to a generic protected-pipeline message and the
+confirmation defaults to the pipeline name, so an empty `[protection]` block is valid.
+
+When a direct or virtual build closure contains a protected pipeline, StreamBuild requires its exact
+confirmation value. This is independent of ordinary plan approval: `--auto-approve`, `--json`, and
+`--events` never bypass protection. Repeat `--confirm` when one build reaches multiple protected
+pipelines. The Plan view enforces the same gate before launching a build.

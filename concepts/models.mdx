@@ -61,7 +61,7 @@ or `EXCEPT` is rejected; wrap it in a CTE and finish with a typed projection.
 | `engine` | `"MergeTree()"` | ClickHouse MergeTree-family table engine |
 | `order_by` | `["_replay_timestamp"]` | Table sorting key expressions |
 | `partition_by` | none | Partition expression |
-| `ttl` | none | ClickHouse TTL expression |
+| `ttl` | `[defaults].model_ttl` or none | ClickHouse TTL expression |
 | `settings` | none | Table settings mapping |
 | `replay_anchor` | `auto` | Use `replay_anchor never` to prevent this model becoming a replay anchor |
 | `replay_on_change` | inherited | Virtual-environment change policy |
@@ -72,6 +72,10 @@ remains valid because direct rebuilds also need replay roots.
 
 `engine`, `order_by`, `partition_by`, `ttl`, `settings`, `replay_anchor`, `replay_on_change`, and
 `bounded_replay_fallback` are table-only and are rejected on views.
+
+An explicit model `ttl` overrides `[defaults].model_ttl`. StreamBuild validates the effective
+expression against the model's output columns and includes it in table storage identity, desired
+state, and drift detection.
 
 ## Driving references
 
