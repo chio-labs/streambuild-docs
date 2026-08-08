@@ -135,8 +135,9 @@ warning = "Interrupts the protected order feed while objects are replaced."
 confirmation = "DEPLOY_ORDERS"
 ```
 
-Both fields are optional. The warning defaults to a generic protected-pipeline message and the
-confirmation defaults to the pipeline name, so an empty `[protection]` block is valid.
+Both fields are optional. The warning defaults to a generic protected-pipeline message. Confirmation
+defaults to the pipeline name when it is already shell-safe, or a `CONFIRM_`-prefixed sanitized name
+otherwise, so an empty `[protection]` block is valid.
 Confirmation values are shell-safe tokens: they must start with a letter or number and may contain
 only letters, numbers, `.`, `_`, `:`, and `-`.
 
