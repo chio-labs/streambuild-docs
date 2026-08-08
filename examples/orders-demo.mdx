@@ -11,7 +11,7 @@ The repository includes a runnable direct-mode project driven by synthetic e-com
 - Ten SQL models exercise transforms, filters, aggregates, and one reference-style join.
 
 <Note>
-  The checked-in configuration explicitly sets `[settings] virtual_environments = false`. Builds
+  The checked-in configuration sets `[defaults] pipeline_mode = "direct"`. Builds
   therefore replace ordinary `tbl__*` and `mv__*` relations without a deployment or promotion step.
 </Note>
 

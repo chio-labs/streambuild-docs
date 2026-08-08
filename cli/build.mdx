@@ -3,8 +3,8 @@ title: "stb build"
 description: "Build selected pipelines directly or as an isolated deployment."
 ---
 
-`build` plans and executes the selected pipeline in the mode declared by the effective project
-configuration. It is the only public build verb.
+`build` plans and executes selected pipelines in their effective modes. It is the only public build
+verb.
 
 ```bash
 stb build
@@ -21,10 +21,16 @@ stb build --select orders --start-time 2026-07-01T00:00:00Z
 In direct mode, StreamBuild preserves managed sources, drops and recreates the selected closure at
 ordinary `tbl__*` and `mv__*` names, and replays retained history through the rebuilt graph.
 
-With `[settings] virtual_environments = true`, the same command creates an unpublished deployment.
+With `[defaults] pipeline_mode = "virtual"`, the same command creates an unpublished deployment.
 Deployment-specific tables and materialized views are populated while stable published views remain
 unchanged. Use `stb deployment audit <deployment-id>` and `stb deployment promote <deployment-id>`
 afterward.
+
+Pipelines can override the default with `mode = "direct"` or `mode = "virtual"` in `pipeline.toml`.
+For a mixed selection, StreamBuild asks for confirmation once, stages every virtual pipeline first,
+and starts the direct phase only after staging succeeds. Direct changes are live immediately; the
+virtual deployment remains staged until promotion. If direct execution fails, the staged deployment
+is retained and reported.
 
 StreamBuild inspects current warehouse state and assembles the complete workflow before displaying
 the destructive plan and asking:
@@ -51,6 +57,8 @@ Only `y` or `yes` approves. `--auto-approve` skips the prompt. JSON execution re
 The selected model or pipeline includes all downstream models. `--deployment-id` and
 `--full-refresh` require virtual environments. `--start-time` works in both modes, requires at least
 one selector, and cannot be combined with `--full-refresh`.
+
+In a mixed build, `--deployment-id` and `--full-refresh` apply only to the virtual phase.
 
 ## Protected pipelines
 
@@ -82,7 +90,7 @@ intermediate model used as a replay input.
 
 ## Exact workflow artifacts
 
-Build visibility artifacts use this layout:
+Single-mode build visibility artifacts use this layout:
 
 ```text
 target/run/build/
@@ -104,9 +112,10 @@ These files are disposable transparency output. StreamBuild never reads `target/
 state. A copied artifact is not recovery state.
 
 `stb plan` uses the same workflow preparation and serialization path under `target/run/plan/`, but
-build never reads or compares that directory. Every build independently inspects current warehouse
-state, assembles and confirms a fresh in-memory workflow, executes it, and records artifacts according
-to the mode-specific timing above.
+build never reads or compares that directory. A mixed plan emits one combined text or JSON document
+without flattening its two phase workflows into one artifact. Every build independently inspects
+current warehouse state, assembles and confirms a fresh in-memory workflow, executes it, and records
+artifacts according to the mode-specific timing above.
 
 Builds do not resume a prior workflow. After cancellation or failure, correct the cause and run
 `stb build` again so StreamBuild can inspect current warehouse state, assemble a fresh workflow, and

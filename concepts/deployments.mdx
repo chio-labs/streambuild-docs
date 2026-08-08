@@ -3,13 +3,15 @@ title: "Virtual Environments"
 description: "Opt-in staged builds, inventory, assessment, promotion, and lifecycle operations."
 ---
 
-Virtual environments preserve StreamBuild's versioned deployment workflow. Enable them for the
-whole invocation:
+Virtual environments preserve StreamBuild's versioned deployment workflow. Use virtual mode as the
+project default:
 
 ```toml
-[settings]
-virtual_environments = true
+[defaults]
+pipeline_mode = "virtual"
 ```
+
+Alternatively, set `mode = "virtual"` in an individual `pipeline.toml`.
 
 The lifecycle is:
 
