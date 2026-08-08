@@ -15,7 +15,8 @@ Each pipeline has an effective operational mode:
 - **Direct mode** is the default. `stb build` rebuilds selected models at their ordinary names and
   replays retained history without a publish step.
 - **Virtual environments** are an explicit opt-in. `stb build` creates deployment-specific tables,
-  `stb deployment audit` assesses them, and `stb deployment promote` switches stable views.
+  `stb deployment audit` assesses them, promotion switches stable views, and retained publications
+  can be compared or rolled back as a complete graph.
 - **Mixed builds** stage selected virtual pipelines first, then apply selected direct pipelines in
   the same CLI invocation. Relationships cannot cross the mode boundary.
 
@@ -44,7 +45,7 @@ seeds, UDF management, or a generic multi-warehouse abstraction.
     Understand destructive rebuilds, replay, failure, and rerun behavior.
   </Card>
   <Card title="Virtual environments" icon="code-branch" href="/concepts/deployments">
-    Stage, inspect, assess, promote, diagnose, and clean versioned deployments.
+    Stage, inspect, assess, compare, promote, roll back, diagnose, and clean deployments.
   </Card>
   <Card title="Orders demo" icon="cart-shopping" href="/examples/orders-demo">
     Run the checked-in Kafka-to-ClickHouse direct-mode example.

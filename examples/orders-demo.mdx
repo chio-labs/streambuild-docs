@@ -162,6 +162,23 @@ Run live audits later without rebuilding:
 stb audit --project-dir examples/orders_demo
 ```
 
+## Try the virtual lifecycle
+
+Change `[defaults].pipeline_mode` in `streambuild_project.toml` to `"virtual"`, then build and inspect
+a staged deployment:
+
+```bash
+stb build --project-dir examples/orders_demo
+stb deployment list --project-dir examples/orders_demo
+stb deployment audit <deployment-id> --project-dir examples/orders_demo
+stb deployment diff <deployment-id> --project-dir examples/orders_demo
+stb deployment promote <deployment-id> --project-dir examples/orders_demo
+```
+
+After promoting another deployment, `stb deployment rollback --previous` rebinds the complete graph
+to the preceding retained publication. The retained graph remains live, so rollback is not a
+historical data snapshot.
+
 ## Explore the UI
 
 ```bash
