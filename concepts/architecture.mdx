@@ -11,11 +11,9 @@ adapter is ClickHouse only.
 For source `order_events`:
 
 ```text
-kafka__order_events       Kafka engine table
-  |
-  +-- mv__order_events    landing materialized view
-        |
-        +-- raw__order_events   MergeTree landing history
+kafka__order_events           Kafka engine table
+└── mv__order_events          landing materialized view
+    └── raw__order_events     MergeTree landing history
 ```
 
 The landing table carries raw `kafka_value` plus normalized replay columns.
@@ -26,14 +24,10 @@ raw MergeTree table.
 
 ```text
 raw__order_events
-  |
-  +-- mv__orders
-        |
-        +-- tbl__orders
-              |
-              +-- mv__daily_revenue
-                    |
-                    +-- tbl__daily_revenue
+└── mv__orders
+    └── tbl__orders
+        └── mv__daily_revenue
+            └── tbl__daily_revenue
 ```
 
 `tbl__*` names are physical model tables in direct mode. A build drops and recreates selected model
@@ -45,12 +39,11 @@ Here the raw source feeds `mv__orders`, which writes `tbl__orders`; that table t
 
 ```text
 raw__order_events
-  |
-  +-- mv__orders__<deployment_id>
-        |
-        +-- tbl__orders__<deployment_id>
+└── mv__orders__<deployment_id>
+    └── tbl__orders__<deployment_id>
 
-tbl__orders   stable View -> tbl__orders__<published_deployment_id>
+tbl__orders                                  stable view
+└── tbl__orders__<published_deployment_id>   published target
 ```
 
 In virtual environments, deployment-specific relations hold data and unsuffixed `tbl__*` names are
@@ -63,11 +56,9 @@ points to the table belonging to the published deployment.
 An adopted `stream_table` has no Kafka table, raw table, or landing MV:
 
 ```text
-orders_existing          user-owned source
-  |
-  +-- mv__orders_enriched
-        |
-        +-- tbl__orders_enriched
+orders_existing              user-owned source
+└── mv__orders_enriched
+    └── tbl__orders_enriched
 ```
 
 StreamBuild reads and validates the source but does not mutate it.
