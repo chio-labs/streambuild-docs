@@ -44,6 +44,20 @@ unavailable; it never substitutes last-arrival age.
 Metadata reads are cached and refreshed outside the `/api/state` request path, so a first load may
 briefly show unavailable while the initial read completes.
 
+## Topics and retained messages
+
+The Topics page reads broker metadata without consuming records. It defaults to topics managed by
+the current project and can show the wider broker inventory. Topic names link to the matching source
+when StreamBuild owns that topic.
+
+Each managed source has a message browser backed by retained rows in its ClickHouse landing table.
+It supports JSON predicates, facets, landed or broker timestamps, time and offset ranges, stable
+preview columns, and cursor pagination. Full records are loaded on demand with a 16 MiB cap.
+
+Browsing messages does not read from Kafka and does not advance consumer offsets. Broker inventory,
+consumer lag, and retained message queries are separate operations, so one unavailable signal does
+not disable the others.
+
 ## Audit scheduler
 
 `stb dev` owns the optional audit scheduler for its selected target. Enable it in project

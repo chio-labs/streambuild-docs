@@ -10,9 +10,6 @@ name = "analytics"
 default_target = "dev"
 adapter = "clickhouse"
 
-[settings]
-virtual_environments = false
-
 [connection]
 host = "localhost"
 port = 8123
@@ -23,6 +20,7 @@ password = "${ENV:CLICKHOUSE_PASSWORD}"
 environment_name = "dev"
 
 [defaults]
+pipeline_mode = "direct"
 kafka_broker_list = "${ENV:KAFKA_BROKERS}"
 managed_source_ttl = "_replay_landed_at + INTERVAL 14 DAY"
 model_ttl = "event_at + INTERVAL 90 DAY"
@@ -102,24 +100,34 @@ naming changes.
 `kafka__`, `raw__`, and `mv__` are reserved for StreamBuild internals. Deployment suffixes are also
 internal and cannot be configured. Effective relation names must be unique unqualified identifiers.
 
-## Direct mode and virtual environments
+## Pipeline build modes
 
-Direct mode is selected when `virtual_environments` is omitted or false:
-
-```toml
-[settings]
-virtual_environments = false
-```
-
-Enable the staged lifecycle for the entire invocation with:
+Direct mode is the project default. Set it explicitly with:
 
 ```toml
-[settings]
-virtual_environments = true
+[defaults]
+pipeline_mode = "direct"
 ```
 
-The setting is project- or local-level only. It is not accepted on individual targets, pipelines,
-or models.
+Use virtual mode as the project default with:
+
+```toml
+[defaults]
+pipeline_mode = "virtual"
+```
+
+An individual `pipeline.toml` can override the project default:
+
+```toml
+mode = "virtual"
+```
+
+Direct pipelines may reference direct pipelines, and virtual pipelines may reference virtual
+pipelines. Model relationships cannot cross the mode boundary in either direction. Multiple
+pipelines may still consume the same project source.
+
+`stb plan` and `stb build` accept mixed selections. StreamBuild stages the virtual phase first and
+starts the immediately-applied direct phase only after virtual staging succeeds.
 
 ## Local overrides
 
@@ -129,8 +137,8 @@ Use ignored `streambuild_local.toml` for developer-specific values:
 target = "personal"
 adapter = "clickhouse"
 
-[settings]
-virtual_environments = true
+[defaults]
+pipeline_mode = "virtual"
 
 [connection]
 host = "localhost"
@@ -140,8 +148,9 @@ port = 18123
 database = "analytics_klonge"
 ```
 
-Local configuration can override the target, adapter, settings, connection, variables, and target
-values. It cannot replace the project name or authored resources.
+Local configuration can override the target, adapter, default pipeline mode, connection, variables,
+and target values. It cannot replace the project name or authored resources. Other committed
+project defaults are not locally overridable.
 
 ## Precedence
 

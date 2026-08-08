@@ -10,12 +10,14 @@ dependencies, and rebuilds them from retained streaming history.
   <img src="/images/ui/lineage-dark.png" alt="StreamBuild lineage graph from a Kafka source through ClickHouse models" />
 </Frame>
 
-It supports two operational workflows:
+Each pipeline has an effective operational mode:
 
 - **Direct mode** is the default. `stb build` rebuilds selected models at their ordinary names and
   replays retained history without a publish step.
 - **Virtual environments** are an explicit opt-in. `stb build` creates deployment-specific tables,
   `stb deployment audit` assesses them, and `stb deployment promote` switches stable views.
+- **Mixed builds** stage selected virtual pipelines first, then apply selected direct pipelines in
+  the same CLI invocation. Relationships cannot cross the mode boundary.
 
 ## What StreamBuild manages
 
@@ -25,6 +27,8 @@ It supports two operational workflows:
 - Materialized-view dependency graphs with driving and side-reference edges
 - Inclusive, at-least-once replay across offset, timestamp, landed-at, and cursor boundaries
 - SQL-native model tests, macro tests, and data-quality audits
+- Scheduled audits with warehouse-backed cadence claims
+- A local UI for plans, runs, lineage, Kafka lag, topics, and retained source messages
 - Offline compile artifacts for review and automation
 
 StreamBuild currently supports ClickHouse only. It does not provide dbt compatibility, authored

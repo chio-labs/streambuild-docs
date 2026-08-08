@@ -107,10 +107,14 @@ from source inference, so a view-only pipeline is valid and source-less. Pipelin
 multiple table source roots, duplicate model stems, or project-wide duplicate model names are
 rejected.
 
+The rule is one source per table pipeline, not one pipeline per source. Independent pipelines may
+consume the same source and share its managed landing tables.
+
 An optional `pipeline.toml` may set virtual-environment replay policy for every model in that
 pipeline:
 
 ```toml
+mode = "virtual"
 bounded_replay_fallback = "full"
 
 [replay_on_change]
@@ -124,6 +128,10 @@ view_prefix = "reporting__"
 These policy fields are invalid in direct mode because direct builds always rebuild their selected
 closure. Naming overrides work in both modes and may partially override project `[naming]` values.
 Pipelines that need no pipeline-wide override omit `pipeline.toml` entirely.
+
+`mode` overrides `[defaults].pipeline_mode` for that pipeline. Relationships between direct and
+virtual pipelines are rejected symmetrically during graph validation. Same-mode cross-pipeline
+relationships remain valid, as do shared sources.
 
 ## Protected pipelines
 
