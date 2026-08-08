@@ -1,0 +1,62 @@
+---
+title: "Sources and Messages"
+description: "Inspect landing health, Kafka lag, broker topics, and retained source records."
+---
+
+The Sources and Topics views separate broker state from retained ClickHouse data. The UI never
+consumes Kafka records while browsing and never advances consumer offsets.
+
+## Source health
+
+The Sources index summarizes every authored source. Open a managed Kafka source to inspect:
+
+- retained row count and storage
+- oldest and newest replay boundaries
+- arrival freshness and throughput
+- the effective consumer group
+- landed, committed, and broker-end offsets by partition
+
+Kafka lag and last arrival are different signals:
+
+- **Kafka lag** is the broker high-water offset minus the effective consumer group's committed
+  offset, summed across partitions.
+- **Last arrival** is the elapsed time since the newest `_replay_landed_at` value in the ClickHouse
+  landing table.
+
+Kafka metadata is loaded without joining or consuming from the group. If broker metadata or a
+required committed offset is unavailable, the UI reports Kafka lag as unavailable; it never
+substitutes last-arrival age. Broker metadata is cached and refreshed outside the main state request,
+so a first load may briefly show unavailable.
+
+## Topics
+
+The Topics page reads broker metadata without consuming records. It defaults to topics managed by
+the current project and can show the wider broker inventory. Managed topic names link back to their
+StreamBuild source.
+
+Topic inventory and source landing state are independent. A broker metadata failure does not prevent
+the UI from showing retained ClickHouse rows or compiled source definitions.
+
+## Retained message browser
+
+Open **Messages** from a managed source to query records retained in its ClickHouse landing table.
+The browser supports:
+
+- JSON field predicates and value facets
+- landed-at and broker timestamp ranges
+- partition and offset ranges
+- stable preview columns
+- cursor pagination
+- full-record inspection up to 16 MiB
+
+Message searches read `raw__<source>` landing history. They do not query Kafka, change a consumer
+group, or alter the source. Broker inventory, consumer lag, and retained-message queries remain
+separate operations so one unavailable signal does not disable the others.
+
+<Note>
+  Retained-message visibility is bounded by the source landing TTL. The browser cannot recover data
+  that ClickHouse has already expired.
+</Note>
+
+See [Replay and Lineage](/concepts/replay-lineage) for the normalized replay columns and boundary
+semantics shown by the source views.

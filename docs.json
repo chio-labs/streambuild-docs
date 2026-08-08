@@ -38,6 +38,15 @@
         ]
       },
       {
+        "group": "Development UI",
+        "pages": [
+          "ui/overview",
+          "ui/sources-and-messages",
+          "ui/plans-and-runs",
+          "ui/quality"
+        ]
+      },
+      {
         "group": "CLI Reference",
         "pages": [
           "cli/discover",

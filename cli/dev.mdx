@@ -20,85 +20,22 @@ ClickHouse connection overrides in addition to:
 | `--ui-host VALUE` | Bind interface; defaults to `127.0.0.1` |
 | `--ui-port VALUE` | Bind port; defaults to `8000` |
 
-The UI combines authored definitions with live warehouse state. Use it to inspect ingestion,
-freshness, lineage, pipelines, sources, catalog relations, deployment state, quality results, and
-durable run history. For direct-mode projects, the Plan view previews destructive downstream
-closures and can launch the same `stb build --auto-approve --events` execution path with the resolved
-project context.
+The UI combines authored definitions with live warehouse state. Detailed guides cover each workflow:
 
-## Ingestion metrics
-
-The Sources views keep two different operational signals separate:
-
-- **Kafka lag** is a message count: the broker high-water offset minus the effective consumer
-  group's committed offset, summed across partitions.
-- **Last arrival** is elapsed time since the newest `_replay_landed_at` value in the ClickHouse
-  landing table.
-
-Kafka lag is read from Kafka metadata without joining or consuming from the group. Partition detail
-shows the landed, committed, and broker-end offsets alongside per-partition lag. The consumer group
-is scoped to the selected target database, matching the group rendered into the ClickHouse Kafka
-table. If broker metadata or a required committed offset is unavailable, the UI reports Kafka lag as
-unavailable; it never substitutes last-arrival age.
-
-Metadata reads are cached and refreshed outside the `/api/state` request path, so a first load may
-briefly show unavailable while the initial read completes.
-
-## Topics and retained messages
-
-The Topics page reads broker metadata without consuming records. It defaults to topics managed by
-the current project and can show the wider broker inventory. Topic names link to the matching source
-when StreamBuild owns that topic.
-
-Each managed source has a message browser backed by retained rows in its ClickHouse landing table.
-It supports JSON predicates, facets, landed or broker timestamps, time and offset ranges, stable
-preview columns, and cursor pagination. Full records are loaded on demand with a 16 MiB cap.
-
-Browsing messages does not read from Kafka and does not advance consumer offsets. Broker inventory,
-consumer lag, and retained message queries are separate operations, so one unavailable signal does
-not disable the others.
-
-## Audit scheduler
-
-`stb dev` owns the optional audit scheduler for its selected target. Enable it in project
-configuration rather than with a separate service:
-
-```toml
-[targets.prod.audit_scheduler]
-enabled = true
-```
-
-Run one scheduler-enabled process per target database. The process skips scheduled work during
-direct builds, serializes audit batches with warehouse reads, and exposes disabled, idle, warming,
-due, blocked, running, and backoff state through `/api/audit-scheduler`. Connection and compilation
-failures use bounded exponential backoff and clear after a successful read.
-
-If two processes overlap during a restart or operator mistake, warehouse-backed logical-slot claims
-elect one executor without requiring Keeper. Claims use the ClickHouse clock and expire from election
-consideration after 10 minutes so a process that dies before emitting run heartbeats cannot block the
-slot permanently.
-If an old process is suspended for that entire window rather than terminated, it can resume after
-takeover and repeat read-only audit compute; logical-slot result resolution remains deterministic.
-
-<Frame>
-  <img src="/images/ui/plan-dark.png" alt="Direct rebuild plan in the StreamBuild development UI" />
-</Frame>
-
-## Runs and cancellation
-
-Builds emit durable statement events and a heartbeat every 10 seconds. Runs without a terminal fact
-appear as `running`, then `unresponsive` after 45 seconds without a signal, and `presumed failed`
-after 10 minutes. These are derived display states, not persisted outcomes, and can reverse when a
-later heartbeat or terminal event arrives.
-
-<Frame>
-  <img src="/images/ui/runs-dark.png" alt="StreamBuild run history with success, failure, and cancelled outcomes" />
-</Frame>
-
-The dev server can gracefully cancel only the build child process it launched. If graceful
-cancellation does not finish, the UI can force-stop that owned child. Builds started in another
-terminal and orphaned runs remain visible but cannot be signalled by the current server. Recovery is
-always a fresh `stb build` invocation, never resume.
+<CardGroup cols={2}>
+  <Card title="Development UI" icon="display" href="/ui/overview">
+    Start with the page map, snapshots, and operating model.
+  </Card>
+  <Card title="Sources and messages" icon="radio" href="/ui/sources-and-messages">
+    Inspect ingestion, Kafka lag, topics, and retained records.
+  </Card>
+  <Card title="Plans and runs" icon="play" href="/ui/plans-and-runs">
+    Preview direct rebuilds and inspect durable execution.
+  </Card>
+  <Card title="Quality" icon="shield-check" href="/ui/quality">
+    Run tests and audits and monitor the audit scheduler.
+  </Card>
+</CardGroup>
 
 `stb dev` is a local development surface, not a multi-user control plane. Keep the default loopback
 binding unless you intentionally provide network access controls.
