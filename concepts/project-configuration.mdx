@@ -129,6 +129,21 @@ pipelines may still consume the same project source.
 `stb plan` and `stb build` accept mixed selections. StreamBuild stages the virtual phase first and
 starts the immediately-applied direct phase only after virtual staging succeeds.
 
+## Deployment readiness
+
+Virtual deployment audits use configurable project-wide thresholds:
+
+```toml
+[defaults.deployment_readiness]
+maximum_lag = "30s"
+minimum_staged_row_ratio = 0.5
+```
+
+`maximum_lag` accepts an `<int><s|m|h|d>` duration and defaults to `30s`.
+`minimum_staged_row_ratio` accepts a number from `0` to `1` and defaults to `0.5`. These thresholds
+affect the reported `ready`, `caution`, or `not_ready` assessment; readiness remains advisory and
+does not block promotion.
+
 ## Local overrides
 
 Use ignored `streambuild_local.toml` for developer-specific values:

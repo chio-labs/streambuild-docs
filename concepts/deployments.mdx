@@ -16,7 +16,8 @@ Alternatively, set `mode = "virtual"` in an individual `pipeline.toml`.
 The lifecycle is:
 
 ```text
-plan -> build -> deployment list/show -> deployment audit -> deployment promote
+plan -> build -> deployment list/show/diff -> deployment audit -> deployment promote
+                                                               -> deployment rollback
 ```
 
 ## Build
@@ -50,6 +51,17 @@ stb deployment show 20260729T120000Z_ab12cd
 Inventory distinguishes active, staged, superseded, incomplete, metadata-missing, and
 physical-missing deployments. List and show are read-only.
 
+Compare the active graph with a retained deployment, or compare two explicit endpoints:
+
+```bash
+stb deployment diff 20260729T120000Z_ab12cd
+stb deployment diff 20260729T120000Z_ab12cd:20260730T120000Z_cd34ef
+```
+
+Diff reports added, removed, changed, unchanged, and physically missing model relations using model
+presence, schemas, physical availability, and current row counts. Either explicit endpoint may be
+`active`.
+
 ## Assess staged data
 
 ```bash
@@ -59,6 +71,14 @@ stb deployment audit 20260729T120000Z_ab12cd
 Assessment compares staged and active data, checks replay coverage, and runs applicable SQL audits.
 Error-severity quality failures produce a `not_ready` assessment. Warning-severity failures appear
 in the audit results but do not by themselves change the replay-readiness assessment.
+
+Configure the advisory replay thresholds in committed project configuration:
+
+```toml
+[defaults.deployment_readiness]
+maximum_lag = "30s"
+minimum_staged_row_ratio = 0.5
+```
 
 <Warning>
   Assessment is an operator safety step, not an enforced promotion lock. `deployment promote` does not
@@ -78,6 +98,25 @@ bindings are switched one relation at a time and StreamBuild reports that capabi
 Show, audit, and promote require explicit positional IDs. There is no automatic sole-candidate or
 latest-candidate selection.
 
+## Roll back
+
+Roll back the complete stable graph to the immediately preceding distinct publication or an explicit
+previously published deployment:
+
+```bash
+stb deployment rollback --previous
+stb deployment rollback 20260729T120000Z_ab12cd
+```
+
+Rollback requires confirmation unless `--auto-approve` is supplied. JSON mode also requires
+`--auto-approve`. StreamBuild rejects staged, unpublished, already-active, missing, and drifted
+targets rather than guessing from partial state.
+
+<Warning>
+  Rollback restores a prior publication's definitions and bindings, not a historical data snapshot.
+  Retained streaming graphs remain live and may have received newer rows since publication.
+</Warning>
+
 ## Operational commands
 
 ```bash
@@ -94,7 +133,10 @@ stb janitor --retention-days 30 --apply
 - [`repair active-view`](/cli/repair) points one broken logical view at a known deployment.
 - [`reconcile`](/cli/reconcile) previews or records a compatible live metadata baseline.
 - [`janitor`](/cli/janitor) previews or removes stale deployment objects while protecting active and
-  recent state.
+  rollback-retained state.
+
+Promotion, rollback, repair, reconciliation, and janitor operations must not overlap against the
+same target database.
 
 These commands are virtual-environment-only. There is no automatic mode conversion or direct-mode
 equivalent.
