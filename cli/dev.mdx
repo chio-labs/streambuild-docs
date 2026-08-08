@@ -44,6 +44,28 @@ unavailable; it never substitutes last-arrival age.
 Metadata reads are cached and refreshed outside the `/api/state` request path, so a first load may
 briefly show unavailable while the initial read completes.
 
+## Audit scheduler
+
+`stb dev` owns the optional audit scheduler for its selected target. Enable it in project
+configuration rather than with a separate service:
+
+```toml
+[targets.prod.audit_scheduler]
+enabled = true
+```
+
+Run one scheduler-enabled process per target database. The process skips scheduled work during
+direct builds, serializes audit batches with warehouse reads, and exposes disabled, idle, warming,
+due, blocked, running, and backoff state through `/api/audit-scheduler`. Connection and compilation
+failures use bounded exponential backoff and clear after a successful read.
+
+If two processes overlap during a restart or operator mistake, warehouse-backed logical-slot claims
+elect one executor without requiring Keeper. Claims use the ClickHouse clock and expire from election
+consideration after 10 minutes so a process that dies before emitting run heartbeats cannot block the
+slot permanently.
+If an old process is suspended for that entire window rather than terminated, it can resume after
+takeover and repeat read-only audit compute; logical-slot result resolution remains deterministic.
+
 <Frame>
   <img src="/images/ui/plan-dark.png" alt="Direct rebuild plan in the StreamBuild development UI" />
 </Frame>

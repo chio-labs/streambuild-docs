@@ -5,11 +5,12 @@ description: "Model-chain tests, zero-row assertions, macro tests, and bag compa
 
 StreamBuild discovers `tests/**/*.sql`, assembles each test as one ClickHouse query, and compares
 actual and expected rows with duplicate-aware bag semantics.
+`TEST()` uses the same SQLBuild header grammar as `MODEL()`: write `key value`, not `key: value`.
 
 ## Model test
 
 ```sql
-TEST (name: "line total computes correctly");
+TEST (name "line total computes correctly");
 
 WITH __ref__orders AS (
   SELECT 'ord_001' AS order_id, 2 AS quantity, 10.0 AS unit_price
@@ -43,7 +44,7 @@ executed in dependency order.
 ## Zero-row assertion
 
 ```sql
-TEST (name: "line totals are non-negative");
+TEST (name "line totals are non-negative");
 
 WITH __ref__orders AS (
   SELECT 'ord_001' AS order_id, 2 AS quantity, 10.0 AS unit_price
@@ -72,7 +73,7 @@ Comparison is bidirectional and NULL-safe:
 Use macro mode to test an otherwise standalone project macro:
 
 ```sql
-TEST (mode: macro, name: "line total expression handles nulls");
+TEST (mode macro, name "line total expression handles nulls");
 
 WITH input_values AS (
   SELECT 2 AS quantity, 10.0 AS unit_price

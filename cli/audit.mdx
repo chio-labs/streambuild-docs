@@ -10,6 +10,7 @@ stb audit
 stb audit --select order_items
 stb audit --select +daily_revenue
 stb audit --select pipeline:order_events --json
+stb audit --force
 ```
 
 Live audit works in both modes. Error-severity failures exit 1; warning failures are reported but do
@@ -17,6 +18,10 @@ not fail the command.
 
 Selectors support bare model names, `pipeline:<name>`, and optional leading `+` for upstream
 models. Multiple selectors are repeatable. Trailing `+` is not accepted by audit selection.
+
+Live audits respect each audit's post-build warmup and report an ineligible audit as deferred. Use
+`--force` for an intentional early evaluation; the result still records the audit's effective
+cadence and warmup policy.
 
 Use [`stb deployment audit <deployment-id>`](/cli/deployment) to assess staged data before
 promotion. Live audit and deployment readiness are deliberately separate commands.
