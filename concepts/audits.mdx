@@ -4,6 +4,7 @@ description: "Live and staged data-quality checks using singular and generic SQL
 ---
 
 An audit passes when its query returns zero rows. Every returned row is a violation.
+`AUDIT()` uses the same SQLBuild header grammar as `MODEL()`: write `key value`, not `key: value`.
 
 ## Singular audit
 
@@ -11,9 +12,9 @@ Concrete audits live recursively under `audits/`, excluding `audits/generic/`:
 
 ```sql
 AUDIT (
-  name: "no negative totals",
-  severity: "warning",
-  description: "Line totals should not be negative",
+  name "no negative totals",
+  severity warning,
+  description "Line totals should not be negative",
 );
 
 SELECT order_id, line_total
@@ -26,6 +27,9 @@ WHERE line_total < 0
 | `name` | none | Required for each block in a multi-audit file |
 | `severity` | `error` | `error` or `warning` |
 | `description` | none | Operator-facing explanation |
+| `every` | inherited or none | Schedule cadence as `<int><s\|m\|h\|d>` |
+| `warmup` | inherited or `0s` | Delay after the newest referenced model is applied |
+| `scheduled` | inherited | Set `false` to opt out of inherited scheduling |
 
 Audits require at least one model `__ref`. Source refs are not allowed.
 
@@ -94,3 +98,99 @@ but StreamBuild does not enforce that recommendation as a promotion lock. Warnin
 are included in the results without changing the assessment by themselves.
 
 Python macros are available in audit SQL bodies.
+
+## Policy and precedence
+
+Project defaults live under `[defaults.audits]`; pipeline defaults live under
+`[audit_defaults]`. An audit's explicit header values win over pipeline values, which win over
+project values:
+
+```toml
+# streambuild_project.toml
+[defaults.audits]
+severity = "warning"
+every = "15m"
+warmup = "5m"
+```
+
+```toml
+# pipelines/orders/pipeline.toml
+[audit_defaults]
+severity = "error"
+every = "5m"
+```
+
+Durations use a positive integer followed by `s`, `m`, `h`, or `d`. `warmup` may be `0s`.
+`scheduled false` removes an inherited cadence. Defining both `scheduled false` and `every`, or
+setting `scheduled true` without an effective cadence, is a compile error.
+
+An audit attached to models from multiple pipelines inherits the strongest severity (`error` over
+`warning`) and longest warmup. Conflicting inherited cadences require an explicit audit cadence.
+The built-in fallback remains `error` when no policy sets severity.
+
+## Warmup behavior
+
+Warmup starts from the newest apply or publication timestamp among the audit's referenced models.
+An audit with positive warmup is recorded as `deferred`, with its eligibility timestamp, rather than
+reported as passed or failed prematurely. Missing model anchors leave a manually invoked audit
+eligible; warmup is not an assertion that input contains rows.
+
+- `stb audit` respects warmup; `stb audit --force` evaluates early.
+- Direct builds immediately run `0s` audits and defer positive-warmup audits.
+- Deployment audits validate populated staged data and do not wait for live post-publication warmup.
+- Scheduled audits never start while a direct build is actively mutating the target.
+- A failed direct materialization blocks scheduled audits until a later direct build applies
+  successfully.
+
+## Identity and drift
+
+Every compiled audit and SQL test has a stable logical name, binding key, authored-definition
+fingerprint, and target-resolved execution fingerprint. File moves and formatting-only SQL changes
+preserve identity. The Quality view reports distinct drift states:
+
+- `binding changed`: attachment, referenced models, severity, or another binding field changed;
+- `definition changed`: authored SQL changed semantically;
+- `execution changed`: target-resolved SQL changed, including a referenced relation change;
+- `schedule changed`: cadence or warmup changed without changing execution.
+
+Manual and build-triggered results reset cadence after a matching evaluation even though they have
+no scheduled slot.
+
+## Scheduled audits
+
+The scheduler is disabled unless the selected target enables it:
+
+```toml
+[audit_scheduler]
+enabled = false
+
+[targets.prod.audit_scheduler]
+enabled = true
+```
+
+The selected target override wins over the project value. Scheduling is hosted by `stb dev`; run
+exactly one scheduler-enabled process per target database. It wakes every 10 seconds, calculates due
+times with the warehouse UTC clock, batches currently due audits, and runs them sequentially.
+Overdue audits run once after restart; missed cadence intervals are not backfilled.
+
+The scheduler does not require ClickHouse Keeper or a separate lease service. If processes overlap,
+they write warehouse-timestamped claims for each logical `scheduled_for` slot and only the earliest
+claim executes. An abandoned claim becomes eligible for recovery after 10 minutes, matching
+presumed-failed run recovery. Current state still groups any duplicate historical attempts by target,
+audit identity, execution fingerprint, and logical slot, then chooses the latest completion and
+result ID defensively. A completed logical slot is not scheduled again.
+
+A process suspended across the full 10-minute recovery window can resume after takeover and repeat
+the read-only audit computation. This is the explicit availability tradeoff for stale recovery
+without Keeper; append-only results remain deterministic for the logical slot.
+
+Known per-audit SQL and result-shape failures are persisted as `error` results for the original slot.
+Failures before identities are available, such as compilation or connection errors, put the
+scheduler into bounded exponential backoff. Scheduler health reports the latest error, backoff,
+running count, and last successful tick.
+
+<Warning>
+  This release changes `_streambuild_node_results` incompatibly. Pre-production databases created
+  by an older release must drop that metadata table before upgrade; StreamBuild recreates the new
+  schema. Audit result history in the dropped table is intentionally not migrated.
+</Warning>
