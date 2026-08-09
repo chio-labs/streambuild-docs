@@ -51,6 +51,11 @@ stb deployment show 20260729T120000Z_ab12cd
 Inventory distinguishes active, staged, superseded, incomplete, metadata-missing, and
 physical-missing deployments. List and show are read-only.
 
+The development UI exposes the same inventory and deployment detail, including scoped lineage,
+staged-versus-live changes, promotion preview, resumable partial promotion, and retained rollback
+guidance. Cleanup is also available from the deployment list. Audit and rollback remain explicit CLI
+operations.
+
 Compare the active graph with a retained deployment, or compare two explicit endpoints:
 
 ```bash
@@ -94,6 +99,10 @@ stb deployment promote 20260729T120000Z_ab12cd
 Promotion creates or replaces stable views such as `tbl__orders` to read from the selected deployment
 table. ClickHouse replaces each relation atomically, but the complete graph is **not graph-atomic**:
 bindings are switched one relation at a time and StreamBuild reports that capability in output.
+
+Before confirmation, the CLI and UI show additions, replacements, removals, and orphaned live
+relations. If promotion stops after switching only part of the graph, the deployment remains
+retryable and the next promotion applies only the remaining changes.
 
 Show, audit, and promote require explicit positional IDs. There is no automatic sole-candidate or
 latest-candidate selection.

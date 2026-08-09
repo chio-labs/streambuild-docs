@@ -1,6 +1,6 @@
 ---
 title: "Plans and Runs"
-description: "Preview direct rebuilds, launch builds, and inspect durable execution history."
+description: "Preview builds, launch them, and inspect durable execution history."
 ---
 
 The Plan view uses the same project analysis and warehouse inspection as `stb plan`. Select a model
@@ -13,21 +13,21 @@ applicable safeguards before any warehouse write occurs.
 
 ## Launch a build
 
-For direct-mode projects, the UI can launch the resolved plan through the same
+The UI launches direct, virtual, and mixed plans through the same
 `stb build --auto-approve --events` execution path as the CLI. Protected pipelines still require
-their exact configured confirmation values.
+their exact configured confirmation values. Virtual work remains staged until promotion.
 
 The displayed plan is a snapshot, not a lock. StreamBuild performs a fresh command invocation for
 the build, records its own warehouse evidence, and never executes SQL copied from an older plan.
 
-Virtual builds remain staged deployments and use the explicit deployment lifecycle commands for
-inventory, assessment, comparison, promotion, and rollback. See
-[Virtual Environments](/concepts/deployments).
+After a virtual build, use Deployments for inventory, comparison, promotion, and cleanup. Assessment
+and rollback remain available through the CLI. See [Virtual Environments](/concepts/deployments).
 
 ## Run history
 
-The Runs view reads durable invocation, node-result, and statement-event metadata. Open a run to
-inspect its command, selection, outcome, duration, node results, and ordered statement progress.
+The Runs view reads durable invocation, node-result, and statement-event metadata. Each active row
+shows completed statements, total statements, and the current step. Open a run to inspect its exact
+command, scoped lineage, startup timings, outcome, and event timeline.
 
 <Frame>
   <img src="/images/ui/runs-dark.png" alt="StreamBuild run history with successful, failed, and cancelled outcomes" />
@@ -39,10 +39,11 @@ Builds emit a heartbeat every 10 seconds. A run without a terminal fact appears 
 |---|---|
 | `running` | A recent durable signal exists |
 | `unresponsive` | No signal has arrived for 45 seconds |
-| `presumed failed` | No signal has arrived for 10 minutes |
+| `presumed failed` | No signal has arrived for the configured safety window; default `10m` |
 
 These are derived display states rather than persisted outcomes. They can reverse if a delayed
-heartbeat or terminal event arrives.
+heartbeat or terminal event arrives. Configure the safety window with
+`[defaults].run_presumed_failed_after`.
 
 ## Cancellation and recovery
 
@@ -50,5 +51,10 @@ The dev server can gracefully cancel only the active build child process that it
 does not finish, the UI can force-stop the owned child. Builds started in another terminal and
 orphaned runs remain visible but cannot be signalled by the current server.
 
-Recovery is always a fresh `stb build` invocation. StreamBuild does not resume a partially completed
-run or treat the UI history as executable state.
+An unresponsive run blocks new builds until the safety window expires. If a start is rejected, the
+error states that no process was launched and reports the remaining wait. Recovery is always a fresh
+`stb build`; StreamBuild does not resume a partial run or execute history as workflow state.
+
+Temporary observability read failures appear as retrying warnings without replacing already loaded
+run details. Completed start/result event pairs are collapsed into one timeline row; only the active
+unfinished start remains separate.

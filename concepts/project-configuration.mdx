@@ -24,6 +24,7 @@ pipeline_mode = "direct"
 kafka_broker_list = "${ENV:KAFKA_BROKERS}"
 managed_source_ttl = "_replay_landed_at + INTERVAL 14 DAY"
 model_ttl = "event_at + INTERVAL 90 DAY"
+run_presumed_failed_after = "10m"
 
 [naming]
 table_prefix = "tbl__"
@@ -143,6 +144,21 @@ minimum_staged_row_ratio = 0.5
 `minimum_staged_row_ratio` accepts a number from `0` to `1` and defaults to `0.5`. These thresholds
 affect the reported `ready`, `caution`, or `not_ready` assessment; readiness remains advisory and
 does not block promotion.
+
+## Run recovery window
+
+`stb dev` blocks a new build while a durable run is still `running` or `unresponsive`. Configure how
+long a silent run remains blocking:
+
+```toml
+[defaults]
+run_presumed_failed_after = "10m"
+```
+
+The value accepts an `<int><s|m|h|d>` duration, defaults to `10m`, and must exceed the 45-second
+unresponsive threshold. Once the window expires, the run is displayed as `presumed_failed` and a
+fresh build may start. This setting is committed project policy because overlapping writes affect
+everyone using the target database.
 
 ## Local overrides
 
