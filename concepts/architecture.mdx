@@ -102,8 +102,9 @@ _streambuild_run_events
 
 Invocations record terminal command outcomes, node results record test and audit evidence, and run
 events record build and statement progress. Builds emit a heartbeat every 10 seconds. The dev UI
-derives `running`, `unresponsive` after 45 seconds, and `presumed_failed` after 10 minutes from the
-latest durable signal; those non-terminal states can reverse when a later event arrives.
+derives `running`, `unresponsive` after 45 seconds, and `presumed_failed` after the configured
+`[defaults].run_presumed_failed_after` window (default `10m`) from the latest durable signal; those
+non-terminal states can reverse when a later event arrives.
 
 Observability rows never influence planning, replay, publication, repair, reconcile, or cleanup.
 All metadata tables are internal contracts; do not edit them manually.

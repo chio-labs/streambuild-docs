@@ -29,10 +29,11 @@ refreshes live state periodically, and the refresh button requests a new snapsho
 | Catalog | Searchable model relations, schemas, storage, and replay facts |
 | Sources | Landing retention, throughput, freshness, and partition-level Kafka lag |
 | Topics | Managed topics or the wider broker inventory |
-| Plan | Preview and launch a direct rebuild from model or pipeline selectors |
+| Plan | Preview and launch direct, virtual, or mixed builds from model or pipeline selectors |
+| Deployments | Inspect staged and retained deployments, compare changes, promote, and clean up |
 | Quality | Inspect and run SQL tests and audits, including scheduler state |
 | Runs | Durable invocation and statement history with owned-build cancellation |
-| Deployment | Project compilation, warehouse connection, and definition counts |
+| Status | Project compilation, warehouse connection, and definition counts |
 | Settings | Read-only effective project, target, connection, naming, variables, and macros |
 
 <Frame>
@@ -45,9 +46,10 @@ The UI serves one resolved project and target per `stb dev` process. Configurati
 `streambuild_project.toml` and `streambuild_local.toml`; Settings displays the effective values but
 does not edit them.
 
-The Plan workflow can execute direct-mode builds through the same StreamBuild command path used by
-the CLI. Virtual deployment inventory, audit, diff, promotion, rollback, repair, and cleanup remain
-explicit CLI operations. See [Virtual Environments](/concepts/deployments).
+The Plan workflow executes direct, virtual, and mixed builds through the same StreamBuild command
+path used by the CLI. The Deployments view provides inventory, diff, promotion, and cleanup;
+deployment audit, rollback, repair, and reconciliation remain explicit CLI operations. See
+[Virtual Environments](/concepts/deployments).
 
 `stb dev` is a local development surface, not a multi-user control plane. Keep the default loopback
 binding unless you intentionally provide network access controls.
@@ -59,7 +61,7 @@ binding unless you intentionally provide network access controls.
     Trace ingestion, lag, topics, and retained records.
   </Card>
   <Card title="Plans and runs" icon="play" href="/ui/plans-and-runs">
-    Preview changes, launch builds, and inspect execution.
+    Preview changes, launch builds, and inspect execution and recovery.
   </Card>
   <Card title="Quality" icon="shield-check" href="/ui/quality">
     Run tests and audits and understand scheduler state.
