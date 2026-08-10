@@ -20,6 +20,11 @@ their exact configured confirmation values. Virtual work remains staged until pr
 The displayed plan is a snapshot, not a lock. StreamBuild performs a fresh command invocation for
 the build, records its own warehouse evidence, and never executes SQL copied from an older plan.
 
+The UI is pinned to the target and database used to launch `stb dev`. Displayed commands omit that
+internal context, and the command box rejects target, database, connection, project, and variable
+overrides. It autocompletes supported flags, model and pipeline selectors, and required confirmation
+tokens.
+
 After a virtual build, use Deployments for inventory, comparison, promotion, and cleanup. Assessment
 and rollback remain available through the CLI. See [Virtual Environments](/concepts/deployments).
 

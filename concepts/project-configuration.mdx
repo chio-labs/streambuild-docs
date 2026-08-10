@@ -130,6 +130,22 @@ pipelines may still consume the same project source.
 `stb plan` and `stb build` accept mixed selections. StreamBuild stages the virtual phase first and
 starts the immediately-applied direct phase only after virtual staging succeeds.
 
+## Build limits
+
+Set an absolute maximum for the distinct pipelines in a build's expanded downstream scope:
+
+```toml
+[build]
+max_pipelines = 20
+
+[targets.prod.build]
+max_pipelines = 5
+```
+
+A target override requires the project default. Builds above the effective limit stop before any
+warehouse mutation. The limit cannot be set in `streambuild_local.toml`; local-only targets inherit
+the project default.
+
 ## Deployment readiness
 
 Virtual deployment audits use configurable project-wide thresholds:
