@@ -138,6 +138,8 @@ relationships remain valid, as do shared sources.
 Add a protection gate when replacing a pipeline has operational impact:
 
 ```toml
+mode = "direct"
+
 [protection]
 warning = "Interrupts the protected order feed while objects are replaced."
 confirmation = "DEPLOY_ORDERS"
@@ -149,7 +151,7 @@ otherwise, so an empty `[protection]` block is valid.
 Confirmation values are shell-safe tokens: they must start with a letter or number and may contain
 only letters, numbers, `.`, `_`, `:`, and `-`.
 
-When a direct or virtual build closure contains a protected pipeline, StreamBuild requires its exact
-confirmation value. This is independent of ordinary plan approval: `--auto-approve`, `--json`, and
-`--events` never bypass protection. Repeat `--confirm` when one build reaches multiple protected
-pipelines. The Plan view enforces the same gate before launching a build.
+Protection is available only for direct pipelines. When a build closure contains protected
+pipelines, StreamBuild requires every exact confirmation value. This is independent of ordinary plan
+approval: `--auto-approve`, `--json`, and `--events` never bypass protection. Repeat `--confirm` for
+multiple protected pipelines. The Plan view shows one confirmation input for each pipeline.

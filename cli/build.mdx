@@ -62,8 +62,8 @@ In a mixed build, `--deployment-id` and `--full-refresh` apply only to the virtu
 
 ## Protected pipelines
 
-A pipeline with `[protection]` in `pipeline.toml` adds a separate confirmation gate. Every protected
-pipeline reached by the resolved build closure requires its exact configured value:
+A direct pipeline with `[protection]` in `pipeline.toml` adds a separate confirmation gate. Every
+protected pipeline reached by the resolved build closure requires its exact configured value:
 
 ```bash
 stb build --select pipeline:orders --auto-approve --confirm DEPLOY_ORDERS
