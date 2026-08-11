@@ -11,12 +11,13 @@ streambuild_project.toml
 sources/
   order_events.yml
 pipelines/
-  order_events/
+  pl__orders/
     orders.sql
     order_items.sql
 ```
 
-Only direct `sources/*.yml` files are discovered. Source names must be unique across the project.
+Only direct `sources/*.yml` files are discovered. Pipeline, source, and model names share one
+project-wide namespace and must be unique.
 
 ## Managed Kafka source
 
@@ -99,16 +100,36 @@ Integer roles must use ClickHouse integer types. Timestamp roles must use `DateT
 
 ## Pipeline directories
 
-The direct child directory name is the pipeline name. Model files are discovered recursively, and
-each model name is its SQL filename stem. StreamBuild follows every table model's `__source(...)` or
-untyped `__ref(...)` driving input transitively until it reaches the source registry. Every pipeline
-containing table models must resolve to exactly one registered source. Terminal views are excluded
-from source inference, so a view-only pipeline is valid and source-less. Pipelines with no models,
-multiple table source roots, duplicate model stems, or project-wide duplicate model names are
-rejected.
+The direct child directory name is the pipeline name. It must start with `pl__` by default. Nested
+directories organize models but do not change pipeline identity. Each model name is its SQL filename
+stem.
+
+StreamBuild follows table-model `__source(...)` and untyped `__ref(...)` dependencies to infer the
+pipeline source. A pipeline with table models must resolve to one registered source. View-only
+pipelines may be source-less. Empty pipelines, multiple source roots, and duplicate logical names
+are rejected.
 
 The rule is one source per table pipeline, not one pipeline per source. Independent pipelines may
 consume the same source and share its managed landing tables.
+
+Configure the prefix or enforce a project-specific naming rule in `streambuild_project.toml`:
+
+```toml
+[naming]
+pipeline_prefix = "custom__" # Use "" to allow unprefixed names.
+pipeline_naming_macro = "pipeline_name"
+```
+
+```python
+from streambuild.compiler.macros.models import PipelineNamingContext
+
+def pipeline_name(ctx: PipelineNamingContext) -> str:
+    return ctx.name if ctx.source_name is None else f"pl__{ctx.source_name}"
+```
+
+The optional macro receives an immutable context with the pipeline name, source name, sorted model
+names, relative directory, and mode. It returns the required directory name. A mismatch stops
+discovery; StreamBuild does not rename files during compile, plan, or build.
 
 An optional `pipeline.toml` may set virtual-environment replay policy for every model in that
 pipeline:

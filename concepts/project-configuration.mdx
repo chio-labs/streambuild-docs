@@ -27,6 +27,7 @@ model_ttl = "event_at + INTERVAL 90 DAY"
 run_presumed_failed_after = "10m"
 
 [naming]
+pipeline_prefix = "pl__"
 table_prefix = "tbl__"
 view_prefix = "view__"
 
@@ -81,6 +82,21 @@ An explicit `ttl` in `MODEL()` overrides `model_ttl`. When neither level defines
 StreamBuild creates the table without a TTL clause. The effective TTL is validated against output
 columns and participates in storage identity and drift detection. Terminal views do not inherit a
 model TTL.
+
+## Pipeline naming
+
+Pipeline names must start with `pl__` by default:
+
+```toml
+[naming]
+pipeline_prefix = "custom__" # Use "" to allow unprefixed names.
+pipeline_naming_macro = "pipeline_name"
+```
+
+`pipeline_naming_macro` is optional. It names a Python macro that accepts a
+`PipelineNamingContext` and returns the required pipeline directory name. A mismatch stops
+discovery; StreamBuild never renames project files. Pipeline, source, and model names must be unique
+across the project.
 
 ## Model relation naming
 
