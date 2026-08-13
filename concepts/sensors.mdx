@@ -89,10 +89,17 @@ from tick start, and a failed poll retries on a later interval.
 
 ## Operate sensors
 
-The **Sensors** page shows dispatcher health, effective status, retry policy, tick history, and dead
-letters. Starting, stopping, resetting, retrying, and skipping require target-scoped
-`automation.manage` permission.
+The **Sensors** page lists each sensor with its toggle, trigger, and last-tick outcome. Starting,
+stopping, resetting, retrying, and skipping require target-scoped `automation.manage` permission.
 
 <Frame>
-  <img src="/images/ui/sensors-dark.png" alt="Sensors page with running and stopped sensors, failed tick history, and a dead-letter action queue" />
+  <img src="/images/ui/sensors-dark.png" alt="Sensors list with toggles, event triggers, and last-tick outcomes" />
+</Frame>
+
+Selecting a sensor reveals its tick history and any unresolved dead letters — events whose handler
+failed every retry, so the sensor's action never ran for them. Retry re-attempts the handler without
+repeating completed steps; skip records a reason and drops the event.
+
+<Frame>
+  <img src="/images/ui/sensors-detail-dark.png" alt="Expanded sensor showing dead letters with retry and skip actions above the tick history" />
 </Frame>
