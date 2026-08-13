@@ -1,0 +1,98 @@
+---
+title: "Sensors and Providers"
+description: "Build durable event-driven and polling automation from warehouse state."
+---
+
+Sensors are Python handlers discovered from `sensors/`. Event sensors react to StreamBuild events
+derived from persisted run and audit results; polling sensors run no more often than a configured
+interval. Providers under `providers/` supply settings and external clients by parameter name.
+
+Enable the dispatcher for a target:
+
+```toml
+[targets.prod.sensors]
+enabled = true
+tick_retention_days = 30
+```
+
+Sensors are disabled by default. `tick_retention_days = 0` retains tick history indefinitely.
+
+## React to events
+
+```python
+from providers.slack import QualitySlack
+from streambuild.events import AuditCompleted, AuditTransition
+from streambuild.sensors import (
+    DefaultSensorStatus,
+    EventSensorContext,
+    SensorRetryPolicy,
+    event_sensor,
+)
+
+@event_sensor(
+    on=AuditCompleted,
+    default_status=DefaultSensorStatus.STOPPED,
+    retry_policy=SensorRetryPolicy(max_attempts=3, backoff_seconds=30),
+)
+def quality_alerts(
+    ctx: EventSensorContext[AuditCompleted], quality_slack: QualitySlack
+) -> None:
+    if ctx.event.transition not in {
+        AuditTransition.NEW_FAILURE,
+        AuditTransition.RECOVERED,
+    }:
+        return
+    message = ctx.step(
+        "compose",
+        lambda: f"{ctx.event.audit_name}: {ctx.event.transition}",
+    )
+    ctx.step("slack", lambda: quality_slack.send(str(message)))
+```
+
+Delivery is at least once. Use `ctx.event.id` as the idempotency key and wrap side effects in
+`ctx.step()` so retries resume from persisted step results. After retries are exhausted, the event
+becomes a dead letter and the stream advances; operators can retry or skip it later.
+
+The built-in catalog currently exposes `AuditCompleted` and `RunCompleted`. Audit events distinguish
+new failures, continuing failures, recoveries, and continuing passes.
+
+## Add a provider
+
+```python
+from pydantic import SecretStr
+from streambuild.providers import Provider
+
+class QualitySlack(Provider):
+    webhook_url: SecretStr
+
+    def send(self, message: str) -> None:
+        ...
+```
+
+`QualitySlack` is injected as `quality_slack`. Provider fields use `pydantic-settings`, so settings
+can come from environment variables rather than project TOML. Providers are created lazily for each
+tick; `setup(ctx)` and `teardown()` can manage external resources.
+
+## Poll external state
+
+```python
+from streambuild.sensors import PollingSensorContext, PollingSensorResult, polling_sensor
+
+@polling_sensor(minimum_interval_seconds=60)
+def poll_inbox(ctx: PollingSensorContext) -> PollingSensorResult:
+    next_cursor = fetch_after(ctx.cursor)
+    return PollingSensorResult(cursor=next_cursor)
+```
+
+The context includes the last successful cursor, success time, and target. The interval is measured
+from tick start, and a failed poll retries on a later interval.
+
+## Operate sensors
+
+The **Sensors** page shows dispatcher health, effective status, retry policy, tick history, and dead
+letters. Starting, stopping, resetting, retrying, and skipping require target-scoped
+`automation.manage` permission.
+
+<Frame>
+  <img src="/images/ui/sensors-dark.png" alt="Sensors page with running and stopped sensors, failed tick history, and a dead-letter action queue" />
+</Frame>
