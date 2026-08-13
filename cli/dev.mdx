@@ -19,6 +19,8 @@ ClickHouse connection overrides in addition to:
 |---|---|
 | `--ui-host VALUE` | Bind interface; defaults to `127.0.0.1` |
 | `--ui-port VALUE` | Bind port; defaults to `8000` |
+| `--auth-mode VALUE` | `disabled`, `trusted_proxy`, or `password` |
+| `--control-store-url VALUE` | SQLite or PostgreSQL account store |
 
 The UI combines authored definitions with live warehouse state. Detailed guides cover each workflow:
 
@@ -37,5 +39,5 @@ The UI combines authored definitions with live warehouse state. Detailed guides 
   </Card>
 </CardGroup>
 
-`stb dev` is a local development surface, not a multi-user control plane. Keep the default loopback
-binding unless you intentionally provide network access controls.
+Disabled authentication is limited to loopback. See
+[Authentication and Access](/concepts/authentication-and-access) before exposing the server.

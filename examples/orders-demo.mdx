@@ -41,6 +41,8 @@ examples/orders_demo/
   sources/order_events.yml
   pipelines/order_events/
   macros/common.py
+  providers/slack.py
+  sensors/quality.py
   tests/order_events/
   audits/
   producer/
@@ -188,6 +190,9 @@ stb dev --project-dir examples/orders_demo
 Open `http://127.0.0.1:8000` to inspect live ingestion, lineage, model definitions, quality results,
 destructive rebuild plans, and run history. See [`stb dev`](/cli/dev) for execution and cancellation
 behavior.
+
+The demo also includes a stopped `quality_alerts` event sensor and an injected `QualitySlack`
+provider. Enable `[targets.demo.sensors]`, then start it from **Sensors** to try the automation example.
 
 ## Clean up
 

@@ -1,0 +1,82 @@
+---
+title: "Authentication and Access"
+description: "Secure the web UI and grant project operations with compiled roles."
+---
+
+`stb dev` supports three authentication modes:
+
+| Mode | Use |
+|---|---|
+| `disabled` | Local loopback development only |
+| `trusted_proxy` | An upstream proxy authenticates users and replaces the identity header |
+| `password` | StreamBuild login page and server-side sessions |
+
+Account data lives in a SQLite or PostgreSQL control store, never in ClickHouse or project files.
+Disabled authentication cannot bind to a shared interface.
+
+## Start a secured server
+
+Use trusted-proxy mode behind Apache/PAM, GSSAPI, OIDC, or another authenticated upstream:
+
+```bash
+stb dev \
+  --auth-mode trusted_proxy \
+  --auth-username-header X-Mustard-User \
+  --control-store-url sqlite:////var/lib/streambuild/control.db
+```
+
+The proxy must strip and replace `X-Mustard-User`. Unknown identities become viewers by default;
+use `--auth-unknown-user-policy deny` to require pre-provisioning.
+
+For standalone password authentication:
+
+```bash
+stb dev \
+  --auth-mode password \
+  --control-store-url postgresql+psycopg://user:password@db/streambuild
+```
+
+Bootstrap the first administrator without connecting to ClickHouse:
+
+```bash
+stb admin --control-store-url sqlite:////var/lib/streambuild/control.db create-user \
+  --username operator --authentication-source password --role admin
+```
+
+The CLI reads passwords securely. Administrators can then create, disable, promote, and reset
+accounts in **Users**; the CLI remains the recovery path.
+
+## Define operational roles
+
+Commit roles in `access.yml`. Grants target the whole project, the selected target, or named
+pipelines:
+
+```yaml
+roles:
+  operator:
+    description: Operate orders and quality automation
+    grants:
+      - scope: project
+        permissions: [project.reload, quality.test.run]
+      - scope: target
+        permissions: [automation.manage]
+      - pipelines: [pl__orders]
+        permissions: [quality.audit.run, build.direct.run]
+```
+
+`stb compile` rejects unknown roles, pipelines, permissions, keys, or invalid scopes. The built-in
+`admin` and `viewer` roles cannot be redefined. Account management and role assignment remain
+system-administrator permissions and cannot be granted in `access.yml`.
+
+Administrators assign compiled roles to users for all targets or one named target. Assignments take
+effect on the next request; an assignment becomes non-authorizing if its role is removed from
+`access.yml`.
+
+<Frame>
+  <img src="/images/ui/users-dark.png" alt="Users administration with accounts, project role assignments, and compiled access roles" />
+</Frame>
+
+<Tip>
+  Runtime settings also accept `STREAMBUILD_AUTH_*` and `STREAMBUILD_CONTROL_STORE_URL` environment
+  variables. Run `stb dev --help` for the complete list.
+</Tip>

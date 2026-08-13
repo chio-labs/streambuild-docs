@@ -26,6 +26,8 @@
         "group": "Core Concepts",
         "pages": [
           "concepts/project-configuration",
+          "concepts/authentication-and-access",
+          "concepts/sensors",
           "concepts/pipelines",
           "concepts/models",
           "concepts/direct-mode",
