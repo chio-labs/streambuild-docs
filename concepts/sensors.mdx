@@ -96,10 +96,11 @@ stopping, resetting, retrying, and skipping require target-scoped `automation.ma
   <img src="/images/ui/sensors-dark.png" alt="Sensors list with toggles, event triggers, and last-tick outcomes" />
 </Frame>
 
-Selecting a sensor reveals its tick history and any unresolved dead letters — events whose handler
-failed every retry, so the sensor's action never ran for them. Retry re-attempts the handler without
-repeating completed steps; skip records a reason and drops the event.
+Each sensor has a detail page with its configuration, tick history, and any unresolved dead
+letters — events whose handler failed every retry, so the sensor's action never ran for them. Retry
+re-attempts the handler without repeating completed steps; skip records a reason and drops the
+event.
 
 <Frame>
-  <img src="/images/ui/sensors-detail-dark.png" alt="Expanded sensor showing dead letters with retry and skip actions above the tick history" />
+  <img src="/images/ui/sensors-detail-dark.png" alt="Sensor detail page with status toggle, configuration facts, dead letters, and tick history" />
 </Frame>
