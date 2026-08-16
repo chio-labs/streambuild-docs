@@ -1,11 +1,12 @@
 ---
-title: "Sensors and Providers"
+title: "Sensors"
 description: "Build durable event-driven and polling automation from warehouse state."
 ---
 
 Sensors are Python handlers discovered from `sensors/`. Event sensors react to StreamBuild events
 derived from persisted run and audit results; polling sensors run no more often than a configured
-interval. Providers under `providers/` supply settings and external clients by parameter name.
+interval. Use [providers](/concepts/providers) to inject settings and external clients into either
+kind of sensor.
 
 Enable the dispatcher for a target:
 
@@ -56,23 +57,6 @@ becomes a dead letter and the stream advances; operators can retry or skip it la
 The built-in catalog currently exposes `AuditCompleted` and `RunCompleted`. Audit events distinguish
 new failures, continuing failures, recoveries, and continuing passes.
 
-## Add a provider
-
-```python
-from pydantic import SecretStr
-from streambuild.providers import Provider
-
-class QualitySlack(Provider):
-    webhook_url: SecretStr
-
-    def send(self, message: str) -> None:
-        ...
-```
-
-`QualitySlack` is injected as `quality_slack`. Provider fields use `pydantic-settings`, so settings
-can come from environment variables rather than project TOML. Providers are created lazily for each
-tick; `setup(ctx)` and `teardown()` can manage external resources.
-
 ## Poll external state
 
 ```python
@@ -86,6 +70,12 @@ def poll_inbox(ctx: PollingSensorContext) -> PollingSensorResult:
 
 The context includes the last successful cursor, success time, and target. The interval is measured
 from tick start, and a failed poll retries on a later interval.
+
+<Tip>
+  Keep credentials and client setup out of the sensor function. Define them once as a
+  [provider](/concepts/providers), then request that provider by parameter name as shown in
+  `quality_alerts` above.
+</Tip>
 
 ## Operate sensors
 

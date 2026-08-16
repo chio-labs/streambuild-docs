@@ -27,7 +27,9 @@
         "pages": [
           "concepts/project-configuration",
           "concepts/authentication-and-access",
+          "concepts/access-control",
           "concepts/sensors",
+          "concepts/providers",
           "concepts/pipelines",
           "concepts/models",
           "concepts/direct-mode",

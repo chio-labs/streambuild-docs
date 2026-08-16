@@ -1,6 +1,6 @@
 ---
-title: "Authentication and Access"
-description: "Secure the web UI and grant project operations with compiled roles."
+title: "Authentication"
+description: "Secure the StreamBuild web UI with a trusted proxy or password sessions."
 ---
 
 `stb dev` supports three authentication modes:
@@ -13,6 +13,9 @@ description: "Secure the web UI and grant project operations with compiled roles
 
 Account data lives in a SQLite or PostgreSQL control store, never in ClickHouse or project files.
 Disabled authentication cannot bind to a shared interface.
+
+Authentication establishes who made a request. [Access control](/concepts/access-control) separately
+determines which operational changes that user may make.
 
 ## Start a secured server
 
@@ -27,6 +30,12 @@ stb dev \
 
 The proxy must strip and replace `X-Mustard-User`. Unknown identities become viewers by default;
 use `--auth-unknown-user-policy deny` to require pre-provisioning.
+
+<Warning>
+  Trusted-proxy mode treats the configured identity header as proof of authentication. Do not expose
+  the StreamBuild process directly: bind it behind the proxy and ensure the proxy removes any
+  client-supplied copy of that header before setting its own value.
+</Warning>
 
 For standalone password authentication:
 
@@ -46,35 +55,24 @@ stb admin --control-store-url sqlite:////var/lib/streambuild/control.db create-u
 The CLI reads passwords securely. Administrators can then create, disable, promote, and reset
 accounts in **Users**; the CLI remains the recovery path.
 
-## Define operational roles
+Password mode issues an HTTP-only, same-site session cookie. The cookie is secure by default, and
+insecure cookies are accepted only on a loopback bind. Disabling an account or resetting its
+password revokes its active sessions. Role changes are read from the control store on each request,
+so they do not require a new login.
 
-Commit roles in `access.yml`. Grants target the whole project, the selected target, or named
-pipelines:
+## Manage accounts
 
-```yaml
-roles:
-  operator:
-    description: Operate orders and quality automation
-    grants:
-      - scope: project
-        permissions: [project.reload, quality.test.run]
-      - scope: target
-        permissions: [automation.manage]
-      - pipelines: [pl__orders]
-        permissions: [quality.audit.run, build.direct.run]
-```
-
-`stb compile` rejects unknown roles, pipelines, permissions, keys, or invalid scopes. The built-in
-`admin` and `viewer` roles cannot be redefined. Account management and role assignment remain
-system-administrator permissions and cannot be granted in `access.yml`.
-
-Administrators assign compiled roles to users for all targets or one named target. Assignments take
-effect on the next request; an assignment becomes non-authorizing if its role is removed from
-`access.yml`.
+System administrators use **Users** to create accounts, enable or disable access, reset password
+credentials, and grant the built-in `admin` role. StreamBuild prevents removal or disabling of the
+last active administrator.
 
 <Frame>
-  <img src="/images/ui/users-dark.png" alt="Users administration with accounts, project role assignments, and compiled access roles" />
+  <img src="/images/ui/users-dark.png" alt="Users administration with account status, authentication sources, and system roles" />
 </Frame>
+
+The same page assigns project-authored operational roles. Continue with [Access
+Control](/concepts/access-control) for the policy format, permission scopes, and a complete
+assignment example.
 
 <Tip>
   Runtime settings also accept `STREAMBUILD_AUTH_*` and `STREAMBUILD_CONTROL_STORE_URL` environment
