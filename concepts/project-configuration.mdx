@@ -47,6 +47,26 @@ Commands that connect to ClickHouse require `host`, `port`, `username`, and `pas
 configuration layers are merged. StreamBuild supplies no connection defaults. Use `password = ""`
 when the ClickHouse account intentionally has an empty password.
 
+## Connection settings
+
+`settings` sends ClickHouse session settings on every statement StreamBuild runs, including replay:
+
+```toml
+[targets.prod.connection.settings]
+max_threads = "8"
+max_memory_usage = "16000000000"
+```
+
+Values may be strings, numbers, or booleans, and are sent as strings (`true` becomes `"1"`).
+
+These override the server's defaults for StreamBuild's own connection only; nothing else querying
+the server is affected. Use this when replay needs a different execution profile from the rest of
+the warehouse — for example capping `max_threads` so a large replay does not exhaust
+`max_memory_usage`, since read memory scales with thread count.
+
+A target's `settings` table replaces the project-level one rather than merging key by key.
+ClickHouse rejects unknown setting names, so a typo fails on connect.
+
 ## Kafka and retention defaults
 
 Set a broker list once for every managed Kafka source in the project:
