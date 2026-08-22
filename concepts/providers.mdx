@@ -14,11 +14,14 @@ Create a `Provider` subclass in `providers/`:
 ```python
 # providers/slack.py
 from pydantic import SecretStr
+from pydantic_settings import SettingsConfigDict
 
 from streambuild.providers import Provider
 
 
 class QualitySlack(Provider):
+    model_config = SettingsConfigDict(env_prefix="QUALITY_SLACK_")
+
     webhook_url: SecretStr
 
     def send(self, message: str) -> None:
