@@ -24,6 +24,20 @@ Every replay boundary is inclusive. StreamBuild intentionally allows overlap bet
 by an attached live materialized view and rows inserted by replay. This avoids missing data at the
 cutoff, but it is not an exactly-once guarantee.
 
+```mermaid
+flowchart LR
+  before["Rows before boundary B"] --> boundary["Rows at boundary B"] --> after["Rows after boundary B"]
+  replay["Replay input<br/>ends at B inclusively"] --> before
+  replay --> boundary
+  live["Live materialized view<br/>continues through B"] --> boundary
+  live --> after
+  boundary --> overlap["Possible duplicate delivery<br/>at B"]
+```
+
+Replay includes rows at boundary `B`, while the attached live materialized view may also deliver
+those same boundary rows. This deliberate at-least-once overlap closes the gap between retained
+history and live ingestion; it does not deduplicate the target.
+
 Model SQL and ClickHouse engines own deduplication or aggregate idempotency.
 
 ## Replay anchors

@@ -173,6 +173,27 @@ exactly one scheduler-enabled process per target database. It wakes every 10 sec
 times with the warehouse UTC clock, batches currently due audits, and runs them sequentially.
 Overdue audits run once after restart; missed cadence intervals are not backfilled.
 
+```mermaid
+flowchart TD
+  tick["stb dev scheduler tick<br/>warehouse UTC clock"] --> due{"Audit slot due?"}
+  due -- "No" --> wait["Wait for a later tick"]
+  due -- "Yes" --> safe{"Direct target safe to read?"}
+  safe -- "No" --> defer["Do not start while a direct build<br/>is mutating or recovery is blocked"]
+  safe -- "Yes" --> claim["Append claim for logical scheduled_for slot"]
+  claim --> earliest{"Earliest valid claim?"}
+  earliest -- "No" --> skip["Do not execute this attempt"]
+  earliest -- "Yes" --> execute["Execute due audits sequentially"]
+  execute --> result["Append result and complete the slot"]
+  claim -. "abandoned for 10 minutes" .-> recovery["Slot becomes eligible for recovery"]
+  recovery --> claim
+```
+
+Each cadence occurrence is one logical `scheduled_for` slot. Processes coordinate through
+append-only warehouse claims: only the earliest valid claimant executes, and a completed slot is not
+scheduled again. Scheduled work waits while direct materialization is unsafe; an abandoned claim can
+be recovered after 10 minutes, which can repeat the read-only computation if the original process
+later resumes.
+
 The scheduler does not require ClickHouse Keeper or a separate lease service. If processes overlap,
 they write warehouse-timestamped claims for each logical `scheduled_for` slot and only the earliest
 claim executes. An abandoned claim becomes eligible for recovery after 10 minutes, matching

@@ -10,24 +10,26 @@ adapter is ClickHouse only.
 
 For source `order_events`:
 
-```text
-kafka__order_events           Kafka engine table
-└── mv__order_events          landing materialized view
-    └── raw__order_events     MergeTree landing history
+```mermaid
+flowchart LR
+  subgraph managed["StreamBuild-owned managed source"]
+    kafka["kafka__order_events<br/>Kafka engine table"] --> landing_mv["mv__order_events<br/>landing materialized view"]
+    landing_mv --> raw["raw__order_events<br/>MergeTree landing history"]
+  end
 ```
 
-The landing table carries raw `kafka_value` plus normalized replay columns.
-The Kafka engine table feeds the landing materialized view, which writes retained history into the
-raw MergeTree table.
+StreamBuild owns all three objects in this chain. The landing table carries raw `kafka_value` plus
+normalized replay columns. The Kafka engine table feeds the landing materialized view, which writes
+retained history into the raw MergeTree table.
 
 ## Direct-mode model graph
 
-```text
-raw__order_events
-└── mv__orders
-    └── tbl__orders
-        └── mv__daily_revenue
-            └── tbl__daily_revenue
+```mermaid
+flowchart LR
+  raw["raw__order_events<br/>managed source history"] --> orders_mv["mv__orders"]
+  orders_mv --> orders_table["tbl__orders"]
+  orders_table --> revenue_mv["mv__daily_revenue"]
+  revenue_mv --> revenue_table["tbl__daily_revenue"]
 ```
 
 `tbl__*` names are physical model tables in direct mode. A build drops and recreates selected model
@@ -37,13 +39,12 @@ Here the raw source feeds `mv__orders`, which writes `tbl__orders`; that table t
 
 ## Virtual-environment model graph
 
-```text
-raw__order_events
-└── mv__orders__<deployment_id>
-    └── tbl__orders__<deployment_id>
-
-tbl__orders                                  stable view
-└── tbl__orders__<published_deployment_id>   published target
+```mermaid
+flowchart LR
+  raw["raw__order_events<br/>managed source history"] --> staged_mv["mv__orders__deployment_id"]
+  staged_mv --> staged_table["tbl__orders__deployment_id"]
+  query["Consumers"] --> stable["tbl__orders<br/>stable view"]
+  stable --> published["tbl__orders__published_deployment_id<br/>published target"]
 ```
 
 In virtual environments, deployment-specific relations hold data and unsuffixed `tbl__*` names are
@@ -55,15 +56,20 @@ points to the table belonging to the published deployment.
 
 An adopted `stream_table` has no Kafka table, raw table, or landing MV:
 
-```text
-orders_existing              user-owned source
-└── mv__orders_enriched
-    └── tbl__orders_enriched
+```mermaid
+flowchart LR
+  subgraph external["User-owned"]
+    adopted["orders_existing<br/>adopted stream table"]
+  end
+  subgraph derived["StreamBuild-owned derived objects"]
+    model_mv["mv__orders_enriched"] --> model_table["tbl__orders_enriched"]
+  end
+  adopted --> model_mv
 ```
 
-StreamBuild reads and validates the source but does not mutate it.
-The user-owned `orders_existing` table feeds `mv__orders_enriched`, which writes
-`tbl__orders_enriched`.
+StreamBuild reads and validates the adopted source but does not create, drop, replace, or otherwise
+mutate it. Ownership begins only at the derived model objects: the user-owned `orders_existing`
+table feeds `mv__orders_enriched`, which writes `tbl__orders_enriched`.
 
 ## Naming
 

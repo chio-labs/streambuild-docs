@@ -109,6 +109,21 @@ LEFT JOIN __ref("region_lookup", ref_type="reference") AS regions
 Mutable references emit a replay warning and prevent the model from being a replay anchor. Both
 side-reference types participate in graph scope and ordering.
 
+```mermaid
+flowchart LR
+  source["Source or upstream model"] -- "one driving edge" --> model["Table model"]
+  stable_side["Stable side input"] -. "ref_type reference" .-> model
+  mutable_side["Mutable side input"] -. "ref_type mutable" .-> model
+  model -- "driving edge" --> downstream["Downstream table model"]
+  model --> terminal["Terminal query view"]
+  other["Other query dependency"] --> terminal
+```
+
+The single driving edge determines the streaming and replay path. Reference and mutable side edges
+both affect graph ordering and scope, but a mutable side edge also prevents the receiving model from
+becoming a replay anchor. A terminal view may read several graph relations for query-time joins, but
+it has no outgoing edge to another model.
+
 ## Terminal views
 
 A terminal view has no driving input and may read any number of sources or models:

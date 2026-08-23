@@ -41,6 +41,22 @@ Arbitrary helper CTEs are allowed. A mock cuts dependency assembly at that relat
 without a mock are assembled from the real compiled model graph. Multiple expected targets are
 executed in dependency order.
 
+```mermaid
+flowchart LR
+  mocks["Source and model mocks<br/>cut graph assembly"] --> assemble["Assemble one ClickHouse query"]
+  graph["Unmocked dependencies<br/>from compiled model graph"] --> assemble
+  assemble --> actual["Actual target rows"]
+  expected["Expected CTE rows"] --> cast["Cast to compiled target types"]
+  actual --> compare["NULL-safe, duplicate-aware<br/>bag comparison"]
+  cast --> compare
+  assertions["Assertion CTEs"] --> zero["Require zero rows"]
+```
+
+StreamBuild stops traversing at each supplied mock and fills every unmocked path with the real
+compiled model SQL. It evaluates assembled targets in dependency order, compares actual rows with
+type-cast expected rows in both directions, and separately requires each assertion CTE to return no
+rows. All of that work is emitted as one ClickHouse query for the test.
+
 ## Zero-row assertion
 
 ```sql
