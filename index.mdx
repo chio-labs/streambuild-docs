@@ -28,7 +28,7 @@ Each pipeline has an effective operational mode:
 - Materialized-view dependency graphs with driving and side-reference edges
 - Inclusive, at-least-once replay across offset, timestamp, landed-at, and cursor boundaries
 - SQL-native model tests, macro tests, and data-quality audits
-- Scheduled audits with warehouse-backed cadence claims
+- Single-process scheduled audits using the warehouse clock
 - A local UI for plans, runs, deployments, lineage, Kafka lag, topics, and retained source messages
 - Offline compile artifacts for review and automation
 

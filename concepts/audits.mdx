@@ -179,31 +179,17 @@ flowchart TD
   due -- "No" --> wait["Wait for a later tick"]
   due -- "Yes" --> safe{"Direct target safe to read?"}
   safe -- "No" --> defer["Do not start while a direct build<br/>is mutating or recovery is blocked"]
-  safe -- "Yes" --> claim["Append claim for logical scheduled_for slot"]
-  claim --> earliest{"Earliest valid claim?"}
-  earliest -- "No" --> skip["Do not execute this attempt"]
-  earliest -- "Yes" --> execute["Execute due audits sequentially"]
-  execute --> result["Append result and complete the slot"]
-  claim -. "abandoned for 10 minutes" .-> recovery["Slot becomes eligible for recovery"]
-  recovery --> claim
+  safe -- "Yes" --> active{"Scheduled audit run already active?"}
+  active -- "Yes" --> wait
+  active -- "No" --> execute["Execute due audits sequentially"]
+  execute --> result["Persist results for the scheduled slot"]
 ```
 
-Each cadence occurrence is one logical `scheduled_for` slot. Processes coordinate through
-append-only warehouse claims: only the earliest valid claimant executes, and a completed slot is not
-scheduled again. Scheduled work waits while direct materialization is unsafe; an abandoned claim can
-be recovered after 10 minutes, which can repeat the read-only computation if the original process
-later resumes.
-
-The scheduler does not require ClickHouse Keeper or a separate lease service. If processes overlap,
-they write warehouse-timestamped claims for each logical `scheduled_for` slot and only the earliest
-claim executes. An abandoned claim becomes eligible for recovery after 10 minutes, matching
-presumed-failed run recovery. Current state still groups any duplicate historical attempts by target,
-audit identity, execution fingerprint, and logical slot, then chooses the latest completion and
-result ID defensively. A completed logical slot is not scheduled again.
-
-A process suspended across the full 10-minute recovery window can resume after takeover and repeat
-the read-only audit computation. This is the explicit availability tradeoff for stale recovery
-without Keeper; append-only results remain deterministic for the logical slot.
+Each cadence occurrence is one logical `scheduled_for` slot. Scheduled work waits while direct
+materialization is unsafe, and the process skips starting a slot while it can observe an active
+scheduled audit run. This is not a distributed lock or leader election protocol. Run exactly one
+scheduler-enabled `stb dev` process per target database; overlapping processes can both execute the
+same read-only slot.
 
 Known per-audit SQL and result-shape failures are persisted as `error` results for the original slot.
 Failures before identities are available, such as compilation or connection errors, put the
