@@ -1,34 +1,7 @@
 ---
-title: "Plans and Runs"
-description: "Preview builds, launch them, and inspect durable execution history."
+title: "Runs"
+description: "Inspect durable execution history, progress, cancellation, and recovery state."
 ---
-
-The Plan view uses the same project analysis and warehouse inspection as `stb plan`. Select a model
-or pipeline to see the downstream closure, relation mutations, replay window, source coverage, and
-applicable safeguards before any warehouse write occurs.
-
-<Frame>
-  <img src="/images/ui/plan-dark.png" alt="Direct rebuild plan in the StreamBuild development UI" />
-</Frame>
-
-## Launch a build
-
-The UI launches direct, virtual, and mixed plans through the same
-`stb build --auto-approve --events` execution path as the CLI. Protected pipelines still require
-their exact configured confirmation values. Virtual work remains staged until promotion.
-
-The displayed plan is a snapshot, not a lock. StreamBuild performs a fresh command invocation for
-the build, records its own warehouse evidence, and never executes SQL copied from an older plan.
-
-The UI is pinned to the target and database used to launch `stb dev`. Displayed commands omit that
-internal context, and the command box rejects target, database, connection, project, and variable
-overrides. It autocompletes supported flags, model and pipeline selectors, and required confirmation
-tokens.
-
-After a virtual build, use Deployments for inventory, comparison, promotion, and cleanup. Assessment
-and rollback remain available through the CLI. See [Virtual Environments](/concepts/deployments).
-
-## Run history
 
 The Runs view reads durable invocation, node-result, and statement-event metadata. Each active row
 shows completed statements, total statements, and the current step. Open a run to inspect its exact
@@ -58,7 +31,8 @@ orphaned runs remain visible but cannot be signalled by the current server.
 
 An unresponsive run blocks new builds until the safety window expires. If a start is rejected, the
 error states that no process was launched and reports the remaining wait. Recovery is always a fresh
-`stb build`; StreamBuild does not resume a partial run or execute history as workflow state.
+build from [Plans](/ui/plans); StreamBuild does not resume a partial run or execute history as
+workflow state.
 
 Temporary observability read failures appear as retrying warnings without replacing already loaded
 run details. Completed start/result event pairs are collapsed into one timeline row; only the active
