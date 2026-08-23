@@ -24,6 +24,7 @@ refreshes live state periodically, and the refresh button requests a new snapsho
 | View | Use it for |
 |---|---|
 | Overview | Source health, model state, quality summary, and recent activity |
+| Warehouse Health | Current ClickHouse capacity, memory context, activity, and project table footprint |
 | Lineage | The complete source-to-model graph and driving or reference edges |
 | Pipelines | Pipeline-scoped definitions and lineage |
 | Catalog | Searchable model relations, schemas, storage, and replay facts |
@@ -59,6 +60,9 @@ trusted-proxy or password authentication and define project permissions. See
 ## Next steps
 
 <CardGroup cols={3}>
+  <Card title="Warehouse Health" icon="server" href="/ui/warehouse-health">
+    Check ClickHouse capacity, memory context, and current activity.
+  </Card>
   <Card title="Sources" icon="database" href="/ui/sources">
     Inspect landing health, retention, freshness, and Kafka lag.
   </Card>

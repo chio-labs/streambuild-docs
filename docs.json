@@ -45,6 +45,7 @@
         "group": "Development UI",
         "pages": [
           "ui/overview",
+          "ui/warehouse-health",
           "ui/sources",
           "ui/topics",
           "ui/messages",
