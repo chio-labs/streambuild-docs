@@ -28,6 +28,10 @@ required committed offset is unavailable, the UI reports Kafka lag as unavailabl
 substitutes last-arrival age. Broker metadata is cached and refreshed outside the main state request,
 so a first load may briefly show unavailable.
 
+<Frame>
+  <img src="/images/ui/source-health-dark.png" alt="Source health showing retained history, Kafka lag, and three partition offsets" />
+</Frame>
+
 ## Topics
 
 The Topics page reads broker metadata without consuming records. It defaults to topics managed by
@@ -52,6 +56,10 @@ The browser supports:
 Message searches read `raw__<source>` landing history. They do not query Kafka, change a consumer
 group, or alter the source. Broker inventory, consumer lag, and retained-message queries remain
 separate operations so one unavailable signal does not disable the others.
+
+<Frame>
+  <img src="/images/ui/source-messages-dark.png" alt="Expanded retained JSON message with Kafka and landing metadata" />
+</Frame>
 
 <Note>
   Retained-message visibility is bounded by the source landing TTL. The browser cannot recover data

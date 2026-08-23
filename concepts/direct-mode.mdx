@@ -62,6 +62,19 @@ One build:
 6. captures inclusive replay watermarks and replays retained history
 7. runs applicable SQL audits against the rebuilt direct tables
 
+```mermaid
+flowchart TD
+  sources["Managed and adopted sources<br/>preserved throughout"] --> preflight["Validate drift and retained history"]
+  preflight --> teardown["Drop selected MVs and tables<br/>reverse dependency order"]
+  teardown --> create["Create selected tables and MVs<br/>dependency order"]
+  create --> replay["Capture inclusive upper watermarks<br/>and replay retained history"]
+  replay --> audit["Run applicable SQL audits<br/>against live rebuilt tables"]
+```
+
+Only the selected derived closure is torn down and recreated. Source objects and source rows stay in
+place, replay repopulates the new live tables with inclusive at-least-once boundaries, and audits run
+after those rebuilt resources are already live. A later failure does not restore the previous graph.
+
 With `--start-time`, the lifecycle stays destructive and unseeded: StreamBuild drops and recreates
 the same selected closure, then replays only the lower-and-upper-bounded source window. Managed and
 adopted source definitions and rows are not replaced, truncated, or deleted. Derived rows before

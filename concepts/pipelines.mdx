@@ -112,6 +112,29 @@ are rejected.
 The rule is one source per table pipeline, not one pipeline per source. Independent pipelines may
 consume the same source and share its managed landing tables.
 
+```mermaid
+flowchart LR
+  source["order_events source"]
+  subgraph first["pl__orders - direct"]
+    orders["orders"] --> totals["order_totals"]
+  end
+  subgraph second["pl__fulfillment - direct"]
+    fulfillment["fulfillment_events"] --> latency["fulfillment_latency"]
+  end
+  subgraph staged["pl__reporting - virtual"]
+    report["daily_report"]
+  end
+  source --> orders
+  source --> fulfillment
+  totals --> latency
+  latency -. "rejected across mode boundary" .-> report
+```
+
+Both direct pipelines infer the same source independently and may have a same-mode relationship
+between their models. Their directory names remain the pipeline identities even if the SQL files
+are nested more deeply. An edge from either direct pipeline into the virtual reporting pipeline is
+rejected because relationships cannot cross the mode boundary.
+
 Configure the prefix or enforce a project-specific naming rule in `streambuild_project.toml`:
 
 ```toml

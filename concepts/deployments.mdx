@@ -15,10 +15,20 @@ Alternatively, set `mode = "virtual"` in an individual `pipeline.toml`.
 
 The lifecycle is:
 
-```text
-plan -> build -> deployment list/show/diff -> deployment audit -> deployment promote
-                                                               -> deployment rollback
+```mermaid
+flowchart LR
+  plan["Plan"] --> build["Build staged deployment"]
+  build --> inspect["List, show, and diff"]
+  inspect --> assess["Audit staged data"]
+  assess -. "advisory readiness" .-> promote["Promote"]
+  promote --> published["Published stable views"]
+  published --> rollback["Roll back to a retained publication"]
 ```
+
+Planning and building do not affect the published graph. Inspection and staged audit inform the
+operator, but audit readiness is advisory rather than a promotion lock. Promotion binds the stable
+views to the staged deployment; rollback can later bind the complete graph to a retained prior
+publication.
 
 ## Build
 
@@ -99,6 +109,18 @@ stb deployment promote 20260729T120000Z_ab12cd
 Promotion creates or replaces stable views such as `tbl__orders` to read from the selected deployment
 table. ClickHouse replaces each relation atomically, but the complete graph is **not graph-atomic**:
 bindings are switched one relation at a time and StreamBuild reports that capability in output.
+
+```mermaid
+flowchart LR
+  consumer["Consumer query"] --> stable["tbl__orders<br/>stable view"]
+  stable --> active["tbl__orders__deployment_A<br/>current published table"]
+  staged["tbl__orders__deployment_B<br/>staged table"] -. "promotion rebinds the stable view" .-> stable
+```
+
+Before promotion, consumers reach deployment A through the unsuffixed stable view and deployment B
+remains staged. Promotion replaces that view definition so it reads deployment B. The replacement
+is atomic for this one relation only; a multi-model graph can be partly switched if promotion stops,
+and retry applies the remaining bindings.
 
 Before confirmation, the CLI and UI show additions, replacements, removals, and orphaned live
 relations. If promotion stops after switching only part of the graph, the deployment remains

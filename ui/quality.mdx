@@ -17,6 +17,10 @@ Result state is tied to the current definition and execution context. The UI ide
 results caused by binding, definition, execution, or schedule changes rather than presenting them as
 current evidence.
 
+<Frame>
+  <img src="/images/ui/quality-warning-dark.png" alt="Expanded warning audit with a sampled violating row" />
+</Frame>
+
 For authored syntax and command-line execution, see [Audits](/concepts/audits) and
 [SQL Testing](/concepts/testing).
 
@@ -35,13 +39,5 @@ backoff. Run one scheduler-enabled process per target database.
 
 The scheduler skips work during direct builds and serializes audit batches with warehouse reads.
 Connection and compilation failures use bounded exponential backoff and clear after a successful
-read.
-
-If two dev processes overlap during a restart or operator mistake, warehouse-backed logical-slot
-claims elect one executor without requiring Keeper. Claims use the ClickHouse clock and expire from
-election consideration after 10 minutes so a process that dies before emitting run heartbeats cannot
-block the slot permanently.
-
-If an old process is suspended for that entire window rather than terminated, it can resume after
-takeover and repeat read-only audit computation. Logical-slot result resolution remains
-deterministic.
+read. Scheduling is single-process: there is no distributed lease between `stb dev` instances, so
+overlapping scheduler-enabled processes can repeat the same read-only slot.
