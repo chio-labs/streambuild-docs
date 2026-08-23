@@ -45,8 +45,11 @@
         "group": "Development UI",
         "pages": [
           "ui/overview",
-          "ui/sources-and-messages",
-          "ui/plans-and-runs",
+          "ui/sources",
+          "ui/topics",
+          "ui/messages",
+          "ui/plans",
+          "ui/runs",
           "ui/quality"
         ]
       },
@@ -75,6 +78,16 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/ui/sources-and-messages",
+      "destination": "/ui/sources"
+    },
+    {
+      "source": "/ui/plans-and-runs",
+      "destination": "/ui/plans"
+    }
+  ],
   "navbar": {
     "links": [
       {
