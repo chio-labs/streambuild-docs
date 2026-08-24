@@ -34,6 +34,7 @@
           "concepts/models",
           "concepts/direct-mode",
           "concepts/deployments",
+          "concepts/destructive-operations",
           "concepts/replay-lineage",
           "concepts/architecture",
           "concepts/testing",
@@ -45,6 +46,7 @@
         "group": "Development UI",
         "pages": [
           "ui/overview",
+          "ui/pipelines",
           "ui/warehouse-health",
           "ui/sources",
           "ui/topics",
@@ -68,7 +70,8 @@
           "cli/doctor",
           "cli/repair",
           "cli/reconcile",
-          "cli/janitor"
+          "cli/janitor",
+          "cli/destruction"
         ]
       },
       {

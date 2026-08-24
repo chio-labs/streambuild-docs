@@ -29,6 +29,7 @@ roles:
           - build.direct.run
           - deployment.create
           - deployment.promote
+          - pipeline.destroy
 
   quality_analyst:
     description: Run quality checks across the project
@@ -45,6 +46,7 @@ roles:
         permissions:
           - build.kill
           - deployment.cleanup
+          - target.reset
           - automation.manage
 ```
 
@@ -58,9 +60,9 @@ Each grant contains exactly one scope:
 
 | Grant | Covers | Typical permissions |
 |---|---|---|
-| `pipelines: [...]` | Only the named pipelines | Build, stage, cancel, promote, tests, audits |
+| `pipelines: [...]` | Only the named pipelines | Build, stage, cancel, promote, destroy, tests, audits |
 | `scope: project` | The served project | Reload, project-wide quality, messages, automation |
-| `scope: target` | The selected warehouse target | Messages, force-kill, cleanup, automation |
+| `scope: target` | The selected warehouse target | Messages, force-kill, cleanup, reset, automation |
 
 The permission vocabulary is intentionally closed:
 
@@ -76,6 +78,8 @@ The permission vocabulary is intentionally closed:
 | `build.kill` | Force-kill build processes for recovery |
 | `deployment.promote` | Promote a staged deployment |
 | `deployment.cleanup` | Remove retained deployment artifacts |
+| `pipeline.destroy` | Destroy exact selected pipelines after frozen-plan confirmation |
+| `target.reset` | Reset all StreamBuild-managed relations in the selected target |
 | `automation.manage` | Start, stop, reset, retry, or skip sensors |
 
 ## Assign roles

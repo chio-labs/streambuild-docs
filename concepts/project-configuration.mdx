@@ -43,6 +43,18 @@ environment_name = "target-dev"
 
 `name` and `default_target` are required. `adapter` defaults to `clickhouse`.
 
+Classify a production target in committed configuration even when its name is not `prod` or
+`production`:
+
+```toml
+[targets.live]
+database = "analytics_live"
+production = true
+```
+
+This immutable classification adds the exact `PRODUCTION` challenge to target reset. It is not
+accepted in `streambuild.local.toml`, so a local override cannot weaken or add production status.
+
 Commands that connect to ClickHouse require `host`, `port`, `username`, and `password` after all
 configuration layers are merged. StreamBuild supplies no connection defaults. Use `password = ""`
 when the ClickHouse account intentionally has an empty password.
