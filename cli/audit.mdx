@@ -23,5 +23,6 @@ Live audits respect each audit's post-build warmup and report an ineligible audi
 `--force` for an intentional early evaluation; the result still records the audit's effective
 cadence and warmup policy.
 
-Use [`stb deployment audit <deployment-id>`](/cli/deployment) to assess staged data before
-promotion. Live audit and deployment readiness are deliberately separate commands.
+Use [`stb deployment audit <deployment-id>`](/cli/deployment) to audit staged data and produce an
+overall readiness assessment before promotion. Live audit and staged deployment assessment are
+deliberately separate operations.

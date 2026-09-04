@@ -90,12 +90,15 @@ DEPLOYMENT_ID="replace-with-deployment-id"
 stb deployment audit "$DEPLOYMENT_ID"
 ```
 
-This virtual-environment command resolves refs to deployment tables, combines data-quality results
-with replay readiness, and reports `ready`, `caution`, or `not_ready`.
+This virtual-environment command resolves refs to deployment tables. The command combines
+staged-versus-active comparisons, replay coverage, and data-quality results into an overall
+readiness assessment: `ready`, `caution`, or `not_ready`. Here, **audit** names the operation and
+**assessment** names its result.
 
-`deployment audit` does not accept `--select`. Error-severity failures recommend against promotion,
-but StreamBuild does not enforce that recommendation as a promotion lock. Warning-severity failures
-are included in the results without changing the assessment by themselves.
+`deployment audit` does not accept `--select`. Error-severity failures produce a `not_ready`
+assessment, but StreamBuild does not enforce that result as a promotion lock. Warning-severity
+failures are included in the results without changing the assessment by themselves. See
+[Virtual Environments](/concepts/deployments#audit-staged-data) for the meaning of each assessment.
 
 Python macros are available in audit SQL bodies.
 

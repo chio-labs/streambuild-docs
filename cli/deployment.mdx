@@ -41,9 +41,17 @@ Diff is read-only.
 
 ## Audit
 
-`deployment audit <deployment-id>` combines staged-versus-active comparison, replay readiness, and
-applicable SQL audits. It does not accept `--select`. A successful command exits 0 even when the
-reported assessment is `not_ready`.
+`deployment audit <deployment-id>` combines staged-versus-active comparison, replay coverage, and
+applicable SQL audits. The audit is the operation; its overall readiness assessment is `ready`,
+`caution`, or `not_ready`:
+
+- `ready` means the available evidence satisfies the configured checks and no error-severity SQL
+  audit failed.
+- `caution` means evidence is incomplete or warrants operator review.
+- `not_ready` means a stronger negative signal or error-severity SQL audit failure was found.
+
+The command does not accept `--select`. A successful command exits 0 even when the reported
+assessment is `not_ready`.
 
 <Warning>
   Readiness is an operator safety signal, not an enforced promotion lock. Treat `not_ready` as a
